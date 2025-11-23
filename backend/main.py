@@ -11,11 +11,11 @@ from api.stream import router as stream_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # configure appropriately for production
-    allow_credentials=False,
-    allow_methods=["*"],
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,  # Changed to True
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["Content-Type"],
+    expose_headers=["*"],  # Expose all headers
 )
 
 app.include_router(route_router, prefix="/api")
