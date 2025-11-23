@@ -112,6 +112,15 @@ function GeoJSONLayer({
 	return null
 }
 
+function MapBackground({ color = '#ffffff' }: { color?: string }) {
+    const map = useMap()
+    useEffect(() => {
+        const c = map.getContainer()
+        if (c && c.style) c.style.backgroundColor = color
+    }, [map, color])
+    return null
+}
+
 export default function Graph({
 	edges,
 	stroke = 'var(--color-sitePrimaryColor)',
@@ -123,17 +132,21 @@ export default function Graph({
 	return (
 		<MapContainer
 			center={center}
-			zoom={4}
+			zoom={5}
 			style={{ width: '100%', height: '100%' }}
 			className={className}
+      scrollWheelZoom={false}    
+      doubleClickZoom={false}
+      touchZoom={false} 
+      
 		>
 			{/* No tile layer - blank canvas */}
+      <TestPoint lat={23.016317573662654} lng={-95.997575231009449} label="Test Point" />
+
 			{edges && (
 				<GeoJSONLayer edges={edges} stroke={stroke} strokeWidth={strokeWidth} />
 			)}
-
-      <TestPoint lat={23.016317573662654} lng={-95.997575231009449} label="Test Point" />
-
+      <MapBackground color="#ffffff" />
 		</MapContainer>
 	)
 }

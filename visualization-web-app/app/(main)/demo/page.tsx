@@ -4,36 +4,14 @@ import React, { useState } from 'react'
 import { Graph } from '../../../components'
 import network from '../../../public/network_leaflet.json'
 
-const CITY_OPTIONS = [
-  'New York, NY',
-  'San Francisco, CA',
-  'Jersey City, NJ',
-  'Boston, MA',
-  'Cambridge, MA',
-  'Chicago, IL',
-  'Miami, FL',
-  'Honolulu, HI',
-  'Newark, NJ',
-  'Philadelphia, PA',
-]
-
-
-// const SAMPLE_POINTS = ...;
-// const SAMPLE_POINTS = [
-  // { lat: 40.7128, lng: -74.0060 }, // New York
-  // { lat: 37.7749, lng: -122.4194 }, // San Francisco
-  // { lat: 34.0522, lng: -118.2437 }, // Los Angeles
-  // { lat: 41.8781, lng: -87.6298 }, // Chicago
-  // { lat: 25.7617, lng: -80.1918 }, // Miami
-  // { lat: 39.7392, lng: -104.9903 }, // Denver
-  // { lat: 47.6062, lng: -122.3321 }, // Seattle
-  // { lat: 29.7604, lng: -95.3698 }, // Houston
-// ]
+const CITY_OPTIONS = {"New York": 49233, "Los Angeles": 48177, "Chicago": 730132, "Miami": 794874, "Houston": 963794, "Dallas": 222262, "Philadelphia": 359683, "Atlanta": 81033, "Washington": 990965, "Boston": 687668, "Phoenix": 273331, "Detroit": 59112, "Seattle": 377822, "San Francisco": 388257, "San Diego": 966374, "Minneapolis": 373130, "Tampa": 230424, "Brooklyn": 613078, "Denver": 704506, "Queens": 131010, "Riverside": 40060, "Las Vegas": 285824, "Baltimore": 616410, "St. Louis": 409624, "Portland": 178183, "San Antonio": 451327, "Sacramento": 865262, "Austin": 532265, "Orlando": 196284, "San Juan": 339601, "San Jose": 549660, "Indianapolis": 762457, "Pittsburgh": 180964, "Cincinnati": 333274, "Manhattan": 896573, "Kansas City": 212923, "Cleveland": 199409, "Columbus": 692576, "Bronx": 526436, "Charlotte": 901048, "Virginia Beach": 942990, "Jacksonville": 519058, "Milwaukee": 911113, "Providence": 11974, "Nashville": 924671, "Salt Lake City": 742226, "Raleigh": 486410, "Richmond": 890976, "Memphis": 299587, "Oklahoma City": 806931, "Hartford": 793963, "Louisville": 538313, "Buffalo": 17330, "Fort Worth": 596181, "Bridgeport": 303369, "New Orleans": 24175, "Tucson": 465825, "El Paso": 89135, "Omaha": 524994, "McAllen": 514290, "Birmingham": 304761, "Albuquerque": 388205, "Tulsa": 613174, "Charleston": 500044, "Fresno": 577513, "Rochester": 244737, "Dayton": 587883, "Cape Coral": 159413, "Provo": 362397, "Colorado Springs": 669275, "Mission Viejo": 767642, "Allentown": 986996, "Baton Rouge": 185474, "Ogden": 288189, "Knoxville": 347983, "Grand Rapids": 533911, "Columbia": 552304, "Albany": 638986, "Bakersfield": 215684, "New Haven": 302053, "Des Moines": 116642, "Palm Bay": 223794, "Akron": 919737, "Concord": 30530, "Mesa": 300949, "Wichita": 213611}
 
 const SAMPLE_POINTS = network
 
 export default function Demo() {
-  const [optimizeBy, setOptimizeBy] = useState('latency')
+  const [latencyWeight, setLatencyWeight] = useState('1.0')
+  const [riskWeight, setRiskWeight] = useState('1.0')
+  const [costWeight, setCostWeight] = useState('1.0')
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
   const [result, setResult] = useState<string | null>(null)
@@ -49,14 +27,14 @@ export default function Demo() {
     }
 
     // Placeholder calculation — later replace with real logic / API call
-    const placeholder = `Calculated path from ${source} → ${destination} (optimize by: ${optimizeBy})`
+    const placeholder = `Calculated path from ${source} → ${destination} (weights — latency: ${latencyWeight}, risk: ${riskWeight}, cost: ${costWeight})`
     setResult(placeholder)
     console.log(placeholder)
   }
 
   return (
     <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-row flex-nowrap gap-4 overflow-x-auto h-[600px]">
+      <div className="flex flex-row flex-nowrap gap-4 overflow-x-auto">
         {/* Left column: selection menu */}
         <aside
           className="w-80 flex-shrink-0 rounded-md p-4"
@@ -67,12 +45,54 @@ export default function Demo() {
         >
           <h2 className="text-lg font-semibold mb-3">Controls</h2>
 
-          {/* Optimize by */}
+          {/* Weights for optimization types */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Optimize by</label>
+            <label className="block text-sm font-medium mb-1">Latency weight</label>
             <select
-              value={optimizeBy}
-              onChange={(e) => setOptimizeBy(e.target.value)}
+              value={latencyWeight}
+              onChange={(e) => setLatencyWeight(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 mb-2"
+              style={{
+                backgroundColor: 'var(--color-siteBackgroundColor)',
+                color: 'var(--color-sitePrimaryColor)',
+                borderColor: 'var(--color-siteSecondaryColor)'
+              }}
+            >
+              {Array.from({ length: 11 }).map((_, i) => {
+                const v = (i / 10).toFixed(1)
+                return (
+                  <option key={`lat-${v}`} value={v}>
+                    {v}
+                  </option>
+                )
+              })}
+            </select>
+
+            <label className="block text-sm font-medium mb-1">Risk weight</label>
+            <select
+              value={riskWeight}
+              onChange={(e) => setRiskWeight(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 mb-2"
+              style={{
+                backgroundColor: 'var(--color-siteBackgroundColor)',
+                color: 'var(--color-sitePrimaryColor)',
+                borderColor: 'var(--color-siteSecondaryColor)'
+              }}
+            >
+              {Array.from({ length: 11 }).map((_, i) => {
+                const v = (i / 10).toFixed(1)
+                return (
+                  <option key={`risk-${v}`} value={v}>
+                    {v}
+                  </option>
+                )
+              })}
+            </select>
+
+            <label className="block text-sm font-medium mb-1">Cost weight</label>
+            <select
+              value={costWeight}
+              onChange={(e) => setCostWeight(e.target.value)}
               className="w-full rounded-md border px-3 py-2"
               style={{
                 backgroundColor: 'var(--color-siteBackgroundColor)',
@@ -80,7 +100,14 @@ export default function Demo() {
                 borderColor: 'var(--color-siteSecondaryColor)'
               }}
             >
-              <option value="latency">Latency</option>
+              {Array.from({ length: 11 }).map((_, i) => {
+                const v = (i / 10).toFixed(1)
+                return (
+                  <option key={`cost-${v}`} value={v}>
+                    {v}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -98,7 +125,7 @@ export default function Demo() {
               }}
             >
               <option value="">Select source</option>
-              {CITY_OPTIONS.map((c) => (
+              {Object.keys(CITY_OPTIONS).map((c) => (
                 <option key={`src-${c}`} value={c}>
                   {c}
                 </option>
@@ -120,7 +147,7 @@ export default function Demo() {
               }}
             >
               <option value="">Select destination</option>
-              {CITY_OPTIONS.map((c) => (
+              {Object.keys(CITY_OPTIONS).map((c) => (
                 <option key={`dst-${c}`} value={c}>
                   {c}
                 </option>
@@ -171,8 +198,8 @@ export default function Demo() {
               <div className="w-full h-full">
               <Graph
                 edges={SAMPLE_POINTS as any}
-                stroke={'var(--color-sitePrimaryColor)'}
-                strokeWidth={3}
+                stroke={'#dddddd'}
+                strokeWidth={3.5}
                 showPoints={true}
                 pointRadius={5}
               />

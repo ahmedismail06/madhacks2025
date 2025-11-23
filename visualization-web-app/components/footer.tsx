@@ -11,7 +11,7 @@ export default function Footer() {
 				<span>
 					MadHacks 2025. &nbsp;
 					<span aria-hidden>©</span>
-					&nbsp;Evan Cedeno, Ahmed Ismail, Soham Mukherjee
+					&nbsp;Evan Cedeno, Ahmed Ismail, & Soham Mukherjee (The 3 Hacketeers)
 				</span>
 			</div>
 
