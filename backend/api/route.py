@@ -23,7 +23,7 @@ async def start_route(
     w_lat: str,
     w_traffic: str,
     w_risk: str,
-    algorithm: str = "dijkstra"
+    algorithm: str
 ):
     # start and goal are CITY NAMES (URL decoded automatically by FastAPI)
     # Convert weight strings to floats

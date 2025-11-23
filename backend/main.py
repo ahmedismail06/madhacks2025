@@ -9,14 +9,14 @@ from api.stream import router as stream_router
 
 app = FastAPI()
 
-# add CORS middleware for frontend integration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# comment out or disable CORS in production if not needed
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # configure appropriately for production
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 app.include_router(route_router, prefix="/api")
 app.include_router(stream_router, prefix="/api")

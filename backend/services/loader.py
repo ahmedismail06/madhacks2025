@@ -23,12 +23,17 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
     # Load all nodes first (with empty edge lists initially)
     # nodes.json is an array, not an object with "nodes" key
     city_nodes = []
+    node_type_counts = {}
+    
     for n in nodes_data:
         node_id = int(n["id"])
         node_name = n.get("name", "")  # City nodes have names, network nodes don't
         node_type = n["type"]
         lat = n["coordinates"]["lat"]
         lng = n["coordinates"]["lng"]
+        
+        # Count node types
+        node_type_counts[node_type] = node_type_counts.get(node_type, 0) + 1
         
         # Track city names for lookup
         if node_name:
@@ -46,6 +51,7 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
         g.add_node(node)
     
     print(f"[LOADER] Loaded {len(city_nodes)} cities: {city_nodes[:5]}...")
+    print(f"[LOADER] Node type counts: {node_type_counts}")
     print(f"[LOADER] Loading {len(edges_data)} edges...")
 
     # Load all edges and add them to both connected nodes (undirected graph)
@@ -131,6 +137,13 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
     print(f"[LOADER] Loaded {edges_with_geometry} edges with geometry")
     print(f"[LOADER] Loaded {edges_road_connection} road connection edges")
     print(f"[LOADER] Skipped {edges_skipped} edges")
+    
+    # Count regen_spot nodes and check their connectivity
+    regen_nodes = [nid for nid, node in g.nodes.items() if node.type == "regen_spot"]
+    print(f"[LOADER] Found {len(regen_nodes)} regen_spot nodes")
+    if len(regen_nodes) > 0:
+        sample_regen = g.nodes[regen_nodes[0]]
+        print(f"[LOADER] Sample regen_spot node {regen_nodes[0]}: {len(sample_regen.edge_ids)} edges")
     
     # Print sample city edge counts
     for city_name in list(city_name_to_id.keys())[:3]:

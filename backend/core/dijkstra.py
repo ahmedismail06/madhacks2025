@@ -59,6 +59,11 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
         # send visited event with signal quality
         # if it's a city node, include the name, if not, just use type + id
         node_name = current.name if current.name else f"{current.type}{current.id}"
+        
+        # Debug: log when we visit different node types
+        if current.type == "regen_spot":
+            print(f"[DIJKSTRA] Visiting regen_spot node {current_id} with signal quality {current_quality}")
+        
         await send_event("node", {
             "nodeName": node_name, 
             "status": "visited",
