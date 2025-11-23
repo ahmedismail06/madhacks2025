@@ -41,11 +41,5 @@ async def stream_route(request: Request, id: str):
     return StreamingResponse(
         event_generator(), 
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control",
-            "Access-Control-Expose-Headers": "*",
-        }
+        headers={"Access-Control-Allow-Origin": "*"}
     ) # SSE streaming response    ) # SSE streaming response
