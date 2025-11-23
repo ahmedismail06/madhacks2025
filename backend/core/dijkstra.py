@@ -22,7 +22,14 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
     came_from: dict[int, tuple[int, int]] = {}  # node_id -> (previous_node_id, edge_id)
     visited = set()
 
-    await send_event("start", {"start": start_id, "goal": goal_id, "initialQuality": 1.0, "start_x": graph.nodes[start_id].x, "start_y": graph.nodes[start_id].y, "end_x": graph.nodes[goal_id].x, "end_y": graph.nodes[goal_id].y}) # send start event
+    await send_event("start", 
+                     {"start": start_id, 
+                      "goal": goal_id, 
+                      "initialQuality": 1.0, 
+                      "start_x": graph.nodes[start_id].x, 
+                      "start_y": graph.nodes[start_id].y, 
+                      "end_x": graph.nodes[goal_id].x, 
+                      "end_y": graph.nodes[goal_id].y}) # send start event
 
     while open_heap:
         current_dist, current_id, current_quality = heapq.heappop(open_heap)
@@ -35,8 +42,10 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
         current = graph.nodes[current_id]
 
         # send visited event with signal quality
+        # if it's a city node, include the name, if not, just use type + id
+        node_name = current.name if current.name else f"{current.type}{current.id}"
         await send_event("node", {
-            "nodeId": current_id, 
+            "nodeName": node_name, 
             "status": "visited",
             "x": current.x,
             "y": current.y,
@@ -63,7 +72,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             await send_event("final-path", {
                 "path": path,
                 "edges": edge_path,
-                "totalCost": distances[goal_id],
+                "totalScore": distances[goal_id],
                 "finalSignalQuality": current_quality,
                 "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen")  # number of regeneration nodes in path
             })
@@ -127,7 +136,10 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                     "degradation": edge.degrade_rate
                 })
             else:
-                await send_event("edge", {"edgeId": edge_id, "status": "failed", "reason": "not_better"})
+                await send_event("edge", 
+                                 {"edgeId": edge_id, 
+                                  "status": "failed", 
+                                  "reason": "not_better"})
 
     await send_event("fail", {"reason": "No route found"})
     return None

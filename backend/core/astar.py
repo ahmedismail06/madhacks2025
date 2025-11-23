@@ -56,8 +56,10 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
         current = graph.nodes[current_id]
 
         # send visited event with signal quality
+        # if it's a city node, include the name, if not, just use type + id
+        node_name = current.name if current.name else f"{current.type}{current.id}"
         await send_event("node", {
-            "nodeId": current_id, 
+            "nodeName": node_name, 
             "status": "visited",
             "x": current.x,
             "y": current.y,
@@ -84,7 +86,7 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             await send_event("final-path", {
                 "path": path,
                 "edges": edge_path,
-                "totalCost": g_score[goal_id],
+                "totalScore": g_score[goal_id],
                 "finalSignalQuality": current_quality,
                 "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen")
             })
@@ -124,7 +126,9 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,
-                    "signalQuality": new_quality
+                    "signalQuality": new_quality,
+                    "x": neighbor.x,
+                    "y": neighbor.y
                 })
             
             tentative_g_score = g_score[current_id] + weight_func(edge)
