@@ -16,6 +16,7 @@ export default function Demo() {
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
   const [result, setResult] = useState<string | null>(null)
+  const [streamQueue, setStreamQueue] = useState<any[]>([])
   const streamAbortRef = useRef<AbortController | null>(null)
 
   async function handleCalculate() {
@@ -40,6 +41,9 @@ export default function Demo() {
         streamAbortRef.current.abort()
         streamAbortRef.current = null
       }
+
+      // Clear previous stream queue
+      setStreamQueue([])
 
       // Perform health check
       const healthURL = `http://${API_HOST}:8000/`
@@ -115,14 +119,31 @@ export default function Demo() {
       const reader = streamResp.body.getReader()
       const decoder = new TextDecoder()
       let done = false
+      let buffer = ''
 
       while (!done) {
         const { value, done: rdone } = await reader.read()
         done = rdone
         if (value) {
           const chunk = decoder.decode(value, { stream: true })
-          // Log raw chunk; backend may send JSON lines or SSE
-          console.log('[STREAM]', chunk)
+          buffer += chunk
+          
+          // Try to parse complete JSON objects (newline-delimited)
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || '' // Keep incomplete line in buffer
+          
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const parsed = JSON.parse(line)
+                console.log('[STREAM]', parsed)
+                // Add to queue
+                setStreamQueue((prev) => [...prev, parsed])
+              } catch (e) {
+                // console.log('[STREAM] Raw:', line)
+              }
+            }
+          }
         }
       }
 
@@ -323,6 +344,7 @@ export default function Demo() {
                 strokeWidth={3.5}
                 showPoints={true}
                 pointRadius={5}
+                streamData={streamQueue}
               />
             </div>
           </div>

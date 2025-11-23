@@ -1,9 +1,17 @@
 "use client"
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { MapContainer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+type PathNode = {
+	x: number // latitude
+	y: number // longitude
+	type: string
+}
+
+type StreamDataItem = any
 
 function TestPoint({ lat, lng, label }: { lat: number; lng: number; label?: string }) {
     const map = useMap()
@@ -41,6 +49,7 @@ type GraphProps = {
 	showPoints?: boolean
 	pointRadius?: number
 	className?: string
+	streamData?: StreamDataItem[]
 }
 
 function GeoJSONLayer({
@@ -121,11 +130,155 @@ function MapBackground({ color = '#ffffff' }: { color?: string }) {
     return null
 }
 
+function PathOverlay({ streamQueue }: { streamQueue: StreamDataItem[] }) {
+	const map = useMap()
+	const [pathData, setPathData] = useState<PathNode[] | null>(null)
+	const [noPath, setNoPath] = useState(false)
+	const pathLayerRef = useRef<L.Polyline | null>(null)
+	const markersRef = useRef<L.CircleMarker[]>([])
+
+	useEffect(() => {
+		console.log('[PathOverlay] streamQueue updated, length:', streamQueue.length)
+		if (!map || streamQueue.length === 0) return
+
+		// Process queue: find item with final-path or no-path event
+		for (const element of streamQueue) {
+			console.log('[PathOverlay] Processing element:', element)
+			if (!element || typeof element !== 'object') continue
+
+      console.log("Heres the event")
+      console.log(element.event)
+
+			if (element.event === 'final-path') {
+				// Extract path
+				const path = element?.data?.path
+				console.log('[PathOverlay] Found final-path, path data:', path)
+				if (Array.isArray(path) && path.length > 0) {
+					console.log('[PathOverlay] Setting path data with', path.length, 'nodes')
+					setPathData(path)
+					setNoPath(false)
+					return
+				} else {
+					console.log('[PathOverlay] Path is empty or not an array')
+				}
+			} else if (element.event === 'no-path') {
+				console.log('[PathOverlay] Found no-path event')
+				setNoPath(true)
+				setPathData(null)
+				return
+			}
+		}
+	}, [streamQueue, map])
+
+	useEffect(() => {
+		console.log('[PathOverlay] pathData updated:', pathData)
+		if (!map) return
+
+		// Clean up previous path and markers
+		if (pathLayerRef.current && map.hasLayer(pathLayerRef.current)) {
+			map.removeLayer(pathLayerRef.current)
+		}
+		markersRef.current.forEach((m) => {
+			if (map.hasLayer(m)) map.removeLayer(m)
+		})
+		markersRef.current = []
+
+		if (!pathData || pathData.length === 0) {
+			console.log('[PathOverlay] No path data to render')
+			return
+		}
+
+		console.log('[PathOverlay] Drawing path with', pathData.length, 'nodes')
+		// Draw polyline connecting all nodes
+		const coords: [number, number][] = pathData.map((node) => [node.y, node.x])
+		console.log('[PathOverlay] Coordinates:', coords.slice(0, 3), '...', coords.length, 'total')
+		const polyline = L.polyline(coords, {
+			color: '#0066ff',
+			weight: 4,
+			opacity: 0.8,
+			lineCap: 'round',
+			lineJoin: 'round',
+		}).addTo(map)
+		pathLayerRef.current = polyline
+		console.log('[PathOverlay] Polyline added to map')
+
+		// Draw markers for special node types
+		pathData.forEach((node) => {
+			if (node.type === 'regen_spot') {
+				const marker = L.circleMarker([node.y, node.x], {
+					radius: 5,
+					fillColor: '#00ff00',
+					color: '#00aa00',
+					weight: 2,
+					opacity: 1,
+					fillOpacity: 0.8,
+				}).addTo(map)
+				markersRef.current.push(marker)
+			} else if (node.type === 'routing_node') {
+				const marker = L.circleMarker([node.y, node.x], {
+					radius: 5,
+					fillColor: '#87ceeb',
+					color: '#4682b4',
+					weight: 2,
+					opacity: 1,
+					fillOpacity: 0.8,
+				}).addTo(map)
+				markersRef.current.push(marker)
+			}
+			// network_node and city_connection: no marker drawn
+		})
+		console.log('[PathOverlay] Added', markersRef.current.length, 'markers')
+
+		// Fit map to path bounds
+		if (coords.length > 0) {
+			const bounds = L.latLngBounds(coords)
+			map.fitBounds(bounds, { padding: [50, 50] })
+			console.log('[PathOverlay] Fitted bounds to path')
+		}
+
+		return () => {
+			if (pathLayerRef.current && map.hasLayer(pathLayerRef.current)) {
+				map.removeLayer(pathLayerRef.current)
+			}
+			markersRef.current.forEach((m) => {
+				if (map.hasLayer(m)) map.removeLayer(m)
+			})
+		}
+	}, [pathData, map])
+
+	if (noPath) {
+		// Display "no path found" message via a custom control
+		useEffect(() => {
+			if (!map) return
+			const NoPathControl = L.Control.extend({
+				onAdd: function () {
+					const div = L.DomUtil.create('div', 'no-path-message')
+					div.innerHTML = '<strong>No path found</strong>'
+					div.style.backgroundColor = 'white'
+					div.style.padding = '10px'
+					div.style.border = '2px solid red'
+					div.style.borderRadius = '4px'
+					div.style.fontWeight = 'bold'
+					return div
+				}
+			})
+			const ctrl = new NoPathControl({ position: 'topright' })
+			ctrl.addTo(map)
+			return () => {
+				ctrl.remove()
+			}
+		}, [map])
+	}
+
+	return null
+}
+
 export default function Graph({
 	edges,
 	stroke = 'var(--color-sitePrimaryColor)',
 	strokeWidth = 3,
 	className,
+	streamData = [],
 }: GraphProps) {
 	const center: [number, number] = [39.8283, -98.5795] // center of USA
 
@@ -141,12 +294,12 @@ export default function Graph({
       
 		>
 			{/* No tile layer - blank canvas */}
-      <TestPoint lat={23.016317573662654} lng={-95.997575231009449} label="Test Point" />
-
 			{edges && (
 				<GeoJSONLayer edges={edges} stroke={stroke} strokeWidth={strokeWidth} />
 			)}
       <MapBackground color="#ffffff" />
+			{/* PathOverlay rendered after base layers so it appears on top */}
+			<PathOverlay streamQueue={streamData} />
 		</MapContainer>
 	)
 }
