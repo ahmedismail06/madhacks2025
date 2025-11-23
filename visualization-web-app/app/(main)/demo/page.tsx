@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Graph } from '../../../components'
 import network from '../../../public/network_leaflet.json'
 
@@ -9,14 +9,16 @@ const CITY_OPTIONS = {"New York": 49233, "Los Angeles": 48177, "Chicago": 730132
 const SAMPLE_POINTS = network
 
 export default function Demo() {
-  const [latencyWeight, setLatencyWeight] = useState('1.0')
-  const [riskWeight, setRiskWeight] = useState('1.0')
-  const [costWeight, setCostWeight] = useState('1.0')
+  const [latencyWeight, setLatencyWeight] = useState('0.5')
+  const [riskWeight, setRiskWeight] = useState('0.5')
+  const [costWeight, setCostWeight] = useState('0.5')
+  const [algorithm, setAlgorithm] = useState('dijkstra')
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
   const [result, setResult] = useState<string | null>(null)
+  const streamAbortRef = useRef<AbortController | null>(null)
 
-  function handleCalculate() {
+  async function handleCalculate() {
     if (!source || !destination) {
       alert('Please select both source and destination')
       return
@@ -26,10 +28,111 @@ export default function Demo() {
       return
     }
 
-    // Placeholder calculation — later replace with real logic / API call
-    const placeholder = `Calculated path from ${source} → ${destination} (weights — latency: ${latencyWeight}, risk: ${riskWeight}, cost: ${costWeight})`
-    setResult(placeholder)
-    console.log(placeholder)
+    // Build weights array [latency, cost, risk] per user request (latency, cost, risk order)
+    const weights = [parseFloat(latencyWeight), parseFloat(costWeight), parseFloat(riskWeight)]
+
+    // API host
+    const API_HOST = '34.27.157.215'
+
+    try {
+      // Abort any previous streaming request
+      if (streamAbortRef.current) {
+        streamAbortRef.current.abort()
+        streamAbortRef.current = null
+      }
+
+      // Perform health check
+      const healthURL = `http://${API_HOST}:8000/`
+      console.log('Performing health check:', healthURL)
+
+      const healthResp = await fetch(healthURL, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (!healthResp.ok) {
+        const txt = await healthResp.text()
+        throw new Error(`route id request failed: ${healthResp.status} ${txt}`)
+      }
+
+      console.log('API health check passed')
+
+      // Make GET request to /api/route with from,to,weights,algorithm as query params
+      const params = new URLSearchParams()
+      params.set('start', source)
+      params.set('goal', destination)
+      // algorithm: 'dijkstra' or 'a-star'
+      params.set('w_lat', weights[0].toString())
+      params.set('w_traffic', weights[1].toString())
+      params.set('w_risk', weights[2].toString())
+      params.set('algorithm', algorithm)
+
+      const routeUrl = `http://${API_HOST}:8000/api/route?${params.toString()}`
+      console.log('Requesting job id:', routeUrl)
+
+      const idResp = await fetch(routeUrl, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!idResp.ok) {
+        const txt = await idResp.text()
+        throw new Error(`route id request failed: ${idResp.status} ${txt}`)
+      }
+
+      const idJson = await idResp.json()
+      // const jobId = idJson?.id ?? idJson?.job_id ?? idJson?.job ?? idJson
+      const jobId = idJson.jobId || idJson.job_id || idJson.id;
+      console.log('Received job id:', jobId)
+      setResult(`Started job ${jobId}`)
+
+      // Now POST to the streaming endpoint
+      const streamUrl = `http://${API_HOST}:8000/api/route/stream?id=${encodeURIComponent(jobId)}`
+
+      const abortCtrl = new AbortController()
+      streamAbortRef.current = abortCtrl
+
+      console.log('[STREAM] Starting stream:', streamUrl);
+
+      const streamResp = await fetch(streamUrl, {
+        method: 'GET',
+        signal: abortCtrl.signal,
+        headers: {
+          'Accept': 'text/event-stream, application/json, text/plain'
+        }
+      })
+
+      if (!streamResp.ok || !streamResp.body) {
+        const txt = await streamResp.text()
+        throw new Error(`stream request failed: ${streamResp.status} ${txt}`)
+      }
+
+      // Read streaming body and print chunks to console
+      const reader = streamResp.body.getReader()
+      const decoder = new TextDecoder()
+      let done = false
+
+      while (!done) {
+        const { value, done: rdone } = await reader.read()
+        done = rdone
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true })
+          // Log raw chunk; backend may send JSON lines or SSE
+          console.log('[STREAM]', chunk)
+        }
+      }
+
+      console.log('Stream completed')
+      setResult((prev) => (prev ? prev + ' — stream completed' : 'stream completed'))
+      streamAbortRef.current = null
+    } catch (err) {
+      console.error('Error during route/stream:', err)
+      setResult(`Error: ${(err as Error).message}`)
+    }
   }
 
   return (
@@ -108,6 +211,24 @@ export default function Demo() {
                   </option>
                 )
               })}
+            </select>
+          </div>
+
+          {/* Algorithm selector */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Algorithm</label>
+            <select
+              value={algorithm}
+              onChange={(e) => setAlgorithm(e.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+              style={{
+                backgroundColor: 'var(--color-siteBackgroundColor)',
+                color: 'var(--color-sitePrimaryColor)',
+                borderColor: 'var(--color-siteSecondaryColor)'
+              }}
+            >
+              <option value="dijkstra">Dijkstra</option>
+              <option value="a-star">A*</option>
             </select>
           </div>
 
