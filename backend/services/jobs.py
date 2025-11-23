@@ -11,17 +11,24 @@ import asyncio
 
 job_queues: dict[str, asyncio.Queue] = {}  # job_id -> Queue
 job_buffers: dict[str, list] = {}  # job_id -> list of buffered events
+last_job_id: str = None  # track the most recent job ID
 
 
 def create_job():
+    global last_job_id
     job_id = str(uuid.uuid4())
     job_queues[job_id] = asyncio.Queue()
     job_buffers[job_id] = []
+    last_job_id = job_id
     return job_id
 
 
 def get_queue(job_id: str) -> asyncio.Queue:
-    return job_queues[job_id]
+    return job_queues.get(job_id)
+
+
+def get_last_job_id() -> str:
+    return last_job_id
 
 
 # Wrapper passed into Dijkstra to send events in batches
