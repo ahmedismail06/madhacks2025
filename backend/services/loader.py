@@ -48,7 +48,7 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
         source_id = int(e["source"])
         target_id = int(e["target"])
         
-        # Extract geometry coordinates if available, if not then skip the edge
+        # Extract geometry coordinates if available, if not, check if city connection
         if "geometry" in e and e["geometry"]:
             coords = e["geometry"]
             start_x, start_y = coords[0]
@@ -75,7 +75,32 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
                 g.nodes[source_id].edge_ids.append(edge_id)
             if target_id in g.nodes:
                 g.nodes[target_id].edge_ids.append(edge_id)
-    
+        
+        elif e.get("road_name", "").startswith("Road connection"):
+            # This is a city-to-network connection without geometry
+            edge = Edge(
+                id=edge_id,
+                from_node=source_id,
+                to_node=target_id,
+                distance=e.get("weight", 1.0),
+                traffic_load=e.get("traffic_load", 0.5),
+                base_ms=e.get("base_ms", 0.003),
+                risk=e.get("risk", 0.05),
+                degrade_rate=e.get("degrade_rate", 0.025),
+                start_x=g.nodes[source_id].x,
+                start_y=g.nodes[source_id].y,
+                end_x=g.nodes[target_id].x,
+                end_y=g.nodes[target_id].y
+            )
+            g.add_edge(edge)
+        
+            # Add edge to both nodes (undirected graph)
+            if source_id in g.nodes:
+                g.nodes[source_id].edge_ids.append(edge_id)
+            if target_id in g.nodes:
+                g.nodes[target_id].edge_ids.append(edge_id)
+
+
     # Save the city_name_to_id dictionary to an external file
     with open("data/city_name_to_id.json", "w") as f:
         json.dump(city_name_to_id, f)
