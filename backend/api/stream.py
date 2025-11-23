@@ -4,7 +4,7 @@
 
 import json
 from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from services.jobs import get_queue
 
 router = APIRouter()
@@ -38,4 +38,14 @@ async def stream_route(request: Request, id: str):
             
             yield f"event: {event_type}\ndata: {event_data}\n\n" # yield event in SSE format
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream") # SSE streaming response
+    return StreamingResponse(
+        event_generator(), 
+        media_type="text/event-stream",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    ) # SSE streaming response
