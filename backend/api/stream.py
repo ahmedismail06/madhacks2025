@@ -38,4 +38,8 @@ async def stream_route(request: Request, id: str):
             
             yield f"event: {event_type}\ndata: {event_data}\n\n" # yield event in SSE format
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream") # SSE streaming response    ) # SSE streaming response
+    return StreamingResponse(
+        event_generator(), 
+        media_type="text/event-stream",
+        headers={"Access-Control-Allow-Origin": "*"}
+    ) # SSE streaming response    ) # SSE streaming response

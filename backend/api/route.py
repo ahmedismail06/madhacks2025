@@ -3,6 +3,7 @@
 # ===========================================
 
 from fastapi import APIRouter, BackgroundTasks
+from fastapi.responses import JSONResponse
 from services.jobs import create_job, make_event_sender
 from services.loader import load_graph
 from core.dijkstra import dijkstra
@@ -50,4 +51,7 @@ async def start_route(
         send_event
     )
 
-    return {"jobId": job_id, "algorithm": algorithm} # return job ID and algorithm to client
+    return JSONResponse(
+        content={"jobId": job_id, "algorithm": algorithm},
+        headers={"Access-Control-Allow-Origin": "*"}
+    ) # return job ID and algorithm to client
