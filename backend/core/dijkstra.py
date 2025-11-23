@@ -105,6 +105,10 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             neighbor_id = edge.get_other_node(current_id)
             neighbor = graph.nodes[neighbor_id]
             
+            # Debug: log when we're about to explore a regen_spot neighbor
+            if neighbor.type == "regen_spot":
+                print(f"[DIJKSTRA] Found regen_spot neighbor {neighbor_id} from node {current_id}, current signal: {current_quality:.4f}")
+            
             # skip if neighbor already visited
             if neighbor_id in visited:
                 continue
@@ -117,6 +121,10 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             power_ratio_per_km = 10 ** (-edge.degrade_rate / 10)
             decay_factor = power_ratio_per_km ** edge.distance
             new_quality = current_quality * decay_factor
+            
+            # Debug: log significant degradation
+            if new_quality < 0.3 and current_quality > 0.3:
+                print(f"[DIJKSTRA] Significant degradation on edge {edge_id}: {current_quality:.4f} -> {new_quality:.4f} (distance={edge.distance:.2f}km, degrade_rate={edge.degrade_rate})")
             
             # Check if signal drops below threshold (0.1 = 10%)
             if new_quality < 0.1:
