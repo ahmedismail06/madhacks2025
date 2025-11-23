@@ -5,6 +5,35 @@ import { MapContainer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+function TestPoint({ lat, lng, label }: { lat: number; lng: number; label?: string }) {
+    const map = useMap()
+
+    useEffect(() => {
+        if (!map) return
+
+        const marker = L.circleMarker([lat, lng], {
+            radius: 6,
+            fillColor: '#ff0000',
+            color: '#ff0000',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8,
+        }).addTo(map)
+
+        if (label) {
+            marker.bindPopup(label)
+        }
+
+        return () => {
+            if (marker && map.hasLayer(marker)) {
+                map.removeLayer(marker)
+            }
+        }
+    }, [lat, lng, map, label])
+
+    return null
+}
+
 type GraphProps = {
 	edges: any // GeoJSON or array of line segments
 	stroke?: string
@@ -102,6 +131,9 @@ export default function Graph({
 			{edges && (
 				<GeoJSONLayer edges={edges} stroke={stroke} strokeWidth={strokeWidth} />
 			)}
+
+      <TestPoint lat={23.016317573662654} lng={-95.997575231009449} label="Test Point" />
+
 		</MapContainer>
 	)
 }
