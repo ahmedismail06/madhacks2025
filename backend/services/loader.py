@@ -53,11 +53,19 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
     edges_with_geometry = 0
     edges_road_connection = 0
     edges_skipped = 0
+    sample_city_edges_checked = 0
     
     for e in edges_data:
         edge_id = int(e["id"])
         source_id = int(e["source"])
         target_id = int(e["target"])
+        
+        # Debug: check edges involving New York city node
+        if sample_city_edges_checked < 5 and (source_id == 49233 or target_id == 49233):
+            print(f"[LOADER DEBUG] Edge {edge_id} involves New York: source={source_id}, target={target_id}")
+            print(f"[LOADER DEBUG]   has geometry: {'geometry' in e and e['geometry']}")
+            print(f"[LOADER DEBUG]   road_name: {e.get('road_name', 'N/A')}")
+            sample_city_edges_checked += 1
         
         # Check if both nodes exist
         if source_id not in g.nodes or target_id not in g.nodes:
@@ -93,8 +101,8 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
             if target_id in g.nodes:
                 g.nodes[target_id].edge_ids.append(edge_id)
         
-        elif e.get("road_name", "").startswith("Road connection"):
-            # This is a city-to-network connection without geometry
+        elif not e.get("geometry"):
+            # This is a connection without geometry (likely city-to-network or city_connection)
             edge = Edge(
                 id=edge_id,
                 from_node=source_id,
