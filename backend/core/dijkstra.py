@@ -14,6 +14,15 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
     start_id = city_name_to_id.get(start)
     goal_id = city_name_to_id.get(goal)
     
+    print(f"[DIJKSTRA] Starting search from '{start}' (ID: {start_id}) to '{goal}' (ID: {goal_id})")
+    
+    if start_id is None:
+        print(f"[DIJKSTRA ERROR] Start city '{start}' not found in city_name_to_id mapping")
+        return None
+    if goal_id is None:
+        print(f"[DIJKSTRA ERROR] Goal city '{goal}' not found in city_name_to_id mapping")
+        return None
+    
     open_heap = [] # min-heap of (cost, node_id, signal_quality)
     heapq.heappush(open_heap, (0, start_id, 1.0)) 
 
@@ -21,6 +30,9 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
     signal_quality = {start_id: 1.0}  # track signal quality at each node
     came_from: dict[int, tuple[int, int]] = {}  # node_id -> (previous_node_id, edge_id)
     visited = set()
+    
+    print(f"[DIJKSTRA] Start node edges: {len(graph.nodes[start_id].edge_ids)}")
+    print(f"[DIJKSTRA] Goal node edges: {len(graph.nodes[goal_id].edge_ids)}")
 
     await send_event("start", 
                      {"start": start_id, 
@@ -30,8 +42,11 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                       "start_y": graph.nodes[start_id].y, 
                       "end_x": graph.nodes[goal_id].x, 
                       "end_y": graph.nodes[goal_id].y}) # send start event
+    
+    nodes_explored = 0
 
     while open_heap:
+        nodes_explored += 1
         current_dist, current_id, current_quality = heapq.heappop(open_heap)
         
         # skip if already visited
@@ -54,6 +69,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
 
         # check if we reached the goal
         if current_id == goal_id:
+            print(f"[DIJKSTRA SUCCESS] Found path! Explored {nodes_explored} nodes")
             # reconstruct path
             path = []
             edge_path = []
@@ -99,6 +115,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             
             # Check if signal drops below threshold (0.1 = 10%)
             if new_quality < 0.1:
+                print(f"[DIJKSTRA] Signal degraded below threshold at edge {edge_id} (quality: {new_quality:.4f})")
                 await send_event("edge", {
                     "edgeId": edge_id,
                     "status": "failed",
@@ -109,6 +126,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             
             # If neighbor is a regen node, reset signal quality to 1.0
             if neighbor.type == "regen_spot":
+                print(f"[DIJKSTRA] Signal regenerated at node {neighbor_id}")
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,
@@ -141,5 +159,8 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                                   "status": "failed", 
                                   "reason": "not_better"})
 
+    print(f"[DIJKSTRA FAIL] No route found after exploring {nodes_explored} nodes")
+    print(f"[DIJKSTRA FAIL] Visited {len(visited)} unique nodes")
+    print(f"[DIJKSTRA FAIL] Final distances dict size: {len(distances)}")
     await send_event("fail", {"reason": "No route found"})
     return None
