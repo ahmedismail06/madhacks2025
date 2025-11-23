@@ -3,43 +3,50 @@
 # ===========================================
 
 import json
-from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+import asyncio
+from flask import Blueprint, request, Response
 from services.jobs import get_queue
 
-router = APIRouter()
+stream_bp = Blueprint('stream', __name__)
 
 
-@router.get("/route/stream")
-async def stream_route(request: Request, id: str):
-    print(f"[STREAM] Client connected to stream for job ID: {id}")
-    print(f"[STREAM] Request headers: {dict(request.headers)}")
-    print(f"[STREAM] Client host: {request.client.host if request.client else 'unknown'}")
+@stream_bp.route("/route/stream", methods=["GET"])
+def stream_route():
+    job_id = request.args.get('id')
     
-    queue = get_queue(id) # get the queue for this job_id
+    print(f"[STREAM] Client connected to stream for job ID: {job_id}")
+    print(f"[STREAM] Request headers: {dict(request.headers)}")
+    print(f"[STREAM] Client host: {request.remote_addr}")
+    
+    queue = get_queue(job_id) # get the queue for this job_id
     
     if queue is None:
-        print(f"[STREAM ERROR] No queue found for job ID: {id}")
-        return {"error": "Job not found"}
+        print(f"[STREAM ERROR] No queue found for job ID: {job_id}")
+        return json.dumps({"error": "Job not found"}), 404
 
-    async def event_generator():
+    def event_generator():
         event_count = 0
-        while True:
-            if await request.is_disconnected():
-                print(f"[STREAM] Client disconnected for job {id} after {event_count} events")
-                break # client disconnected
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            while True:
+                # Get event from queue
+                event = loop.run_until_complete(asyncio.wait_for(queue.get(), timeout=30.0))
+                event_type = event['event']
+                event_data = json.dumps(event['data'])
+                event_count += 1
+                
+                print(f"[STREAM] Sending event #{event_count} type={event_type} for job {job_id}")
+                
+                yield f"event: {event_type}\ndata: {event_data}\n\n"
+                
+        except asyncio.TimeoutError:
+            print(f"[STREAM] Timeout for job {job_id} after {event_count} events")
+        except Exception as e:
+            print(f"[STREAM ERROR] Exception for job {job_id}: {e}")
+        finally:
+            loop.close()
+            print(f"[STREAM] Stream closed for job {job_id} after {event_count} events")
 
-            event = await queue.get() # wait for next event
-            event_type = event['event'] # event type
-            event_data = json.dumps(event['data']) # event data as JSON
-            event_count += 1
-            
-            print(f"[STREAM] Sending event #{event_count} type={event_type} for job {id}")
-            
-            yield f"event: {event_type}\ndata: {event_data}\n\n" # yield event in SSE format
-
-    return StreamingResponse(
-        event_generator(), 
-        media_type="text/event-stream",
-        headers={"Access-Control-Allow-Origin": "*"}
-    ) # SSE streaming response    ) # SSE streaming response
+    return Response(event_generator(), mimetype="text/event-stream")

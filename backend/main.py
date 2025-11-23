@@ -1,27 +1,22 @@
 # ===========================================
-# main.py — FastAPI bootstrap
+# main.py — Flask bootstrap
 # ===========================================
 
-from fastapi import FastAPI
-#from fastapi.middleware import add_middleware 
-from fastapi.middleware.cors import CORSMiddleware
-from api.route import router as route_router
-from api.stream import router as stream_router
+from flask import Flask, jsonify
+from api.route import route_bp
+from api.stream import stream_bp
 
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=False,
-)
+app = Flask(__name__)
 
-app.include_router(route_router, prefix="/api")
-app.include_router(stream_router, prefix="/api")
+# Register blueprints
+app.register_blueprint(route_bp, url_prefix="/api")
+app.register_blueprint(stream_bp, url_prefix="/api")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Fiber Route API", "status": "running"}
+@app.route("/")
+def root():
+    return jsonify({"message": "Fiber Route API", "status": "running"})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True, threaded=True)
