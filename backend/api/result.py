@@ -87,3 +87,78 @@ def get_result():
         return response, 500
     finally:
         loop.close()
+
+
+# Import the plotter function created above
+from services.plotter import generate_path_svg 
+
+result_bp = Blueprint('result', __name__)
+
+@result_bp.route("/route/result_svg", methods=["GET"])
+def get_result():
+    # ... (Your existing code for job_id and queue retrieval remains here) ...
+    job_id = get_last_job_id()
+    if job_id is None:
+        # ... error handling ...
+        return jsonify({"error": "No route computation started"}), 404
+    
+    queue = get_queue(job_id)
+    if queue is None:
+        # ... error handling ...
+        return jsonify({"error": "Job not found"}), 404
+
+    # Wait for the final event
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        final_event = None
+        while True:
+            event = loop.run_until_complete(asyncio.wait_for(queue.get(), timeout=60.0))
+            
+            # ... (Your existing batch/event parsing logic remains here) ...
+            if event['event'] == 'batch':
+                for e in event['data']:
+                    if e['event'] in ['final-path', 'no-path']:
+                        final_event = e
+                        break
+                if final_event: break
+            elif event['event'] in ['final-path', 'no-path']:
+                final_event = event
+                break
+        
+        if final_event is None:
+            raise Exception("No final event found")
+        
+        # --- GENERATING THE RESPONSE ---
+        
+        if final_event['event'] == 'final-path':
+            path_data = final_event['data']['path']
+            
+            # Generate the SVG in memory
+            svg_string = generate_path_svg(path_data)
+            
+            simplified_response = {
+                "event": "final-path",
+                "path": path_data,
+                # We send the SVG string directly in the JSON
+                "visualization": svg_string 
+            }
+        else:
+            simplified_response = {
+                "event": "no-path",
+                "reason": final_event['data'].get('reason', 'No route found')
+            }
+        
+        response = jsonify(simplified_response)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+        
+    except asyncio.TimeoutError:
+        # ... existing error handling ...
+        return jsonify({"error": "Timeout"}), 408
+    except Exception as e:
+        # ... existing error handling ...
+        return jsonify({"error": str(e)}), 500
+    finally:
+        loop.close()
