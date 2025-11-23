@@ -6,12 +6,12 @@
     {"id": 10004, "name": "Houston", "type": "city", "edges": [5003,5006], "x": 1200, "y": 800},
     {"id": 10005, "name": "Miami", "type": "city", "edges": [5006,5007], "x": 1000, "y": 300},
     {"id": 10006, "name": "Seattle", "type": "city", "edges": [5004,5008], "x": -2000, "y": 2900},
-    {"id": 10007, "name": "Denver", "type": "city", "edges": [5005,5009], "x": 0, "y": 1500},
-    {"id": 10008, "name": "Atlanta", "type": "city", "edges": [5007,5010], "x": 500, "y": 1200},
+    {"id": 10007, "name": "Denver", "type": "city", "edges": [5005,5009,5013], "x": 0, "y": 1500},
+    {"id": 10008, "name": "Atlanta", "type": "city", "edges": [5007,5010,5014], "x": 500, "y": 1200},
     {"id": 10009, "name": "Boston", "type": "city", "edges": [5002,5011], "x": -400, "y": 3000},
     {"id": 10010, "name": "San Francisco", "type": "city", "edges": [5008,5012], "x": -2100, "y": 900},
-    {"id": 20001, "name": "routing_midwest_1", "type": "routing", "edges": [5001,5005,5009], "x": -100, "y": 1800},
-    {"id": 20002, "name": "routing_south_1", "type": "routing", "edges": [5003,5006,5010], "x": 1000, "y": 900},
+    {"id": 20001, "name": "routing_midwest_1", "type": "routing", "edges": [5001,5005,5009,5015], "x": -100, "y": 1800},
+    {"id": 20002, "name": "routing_south_1", "type": "routing", "edges": [5003,5006,5010,5016], "x": 1000, "y": 900},
     {"id": 30001, "name": "regen_northeast_1", "type": "regen", "edges": [5002,5011], "x": -350, "y": 2900},
     {"id": 30002, "name": "regen_west_1", "type": "regen", "edges": [5004,5012], "x": -2000, "y": 1500}
   ],
@@ -27,6 +27,10 @@
     {"id":5009, "from":10007, "to":20001, "distance": 300, "traffic_load":0.2, "base_ms": 0.003, "risk":0.03, "degrade_rate":0.01, "start_x":0, "start_y":1500, "end_x":-100, "end_y":1800},
     {"id":5010, "from":10008, "to":20002, "distance": 500, "traffic_load":0.3, "base_ms": 0.006, "risk":0.04, "degrade_rate":0.03, "start_x":500, "start_y":1200, "end_x":1000, "end_y":900},
     {"id":5011, "from":10009, "to":30001, "distance": 100, "traffic_load":0.1, "base_ms": 0.001, "risk":0.02, "degrade_rate":0.02, "start_x":-400, "start_y":3000, "end_x":-350, "end_y":2900},
-    {"id":5012, "from":10010, "to":30002, "distance": 300, "traffic_load":0.2, "base_ms": 0.004, "risk":0.03, "degrade_rate":0.01, "start_x":-2100, "start_y":900, "end_x":-2000, "end_y":1500}
+    {"id":5012, "from":10010, "to":30002, "distance": 300, "traffic_load":0.2, "base_ms": 0.004, "risk":0.03, "degrade_rate":0.01, "start_x":-2100, "start_y":900, "end_x":-2000, "end_y":1500},
+    {"id":5013, "from":10007, "to":10004, "distance": 800, "traffic_load":0.5, "base_ms": 0.003, "risk":0.06, "degrade_rate":0.015, "start_x":0, "start_y":1500, "end_x":1200, "end_y":800},
+    {"id":5014, "from":10008, "to":10003, "distance": 700, "traffic_load":0.4, "base_ms": 0.004, "risk":0.05, "degrade_rate":0.015, "start_x":500, "start_y":1200, "end_x":-200, "end_y":1900},
+    {"id":5015, "from":20001, "to":20002, "distance": 1100, "traffic_load":0.6, "base_ms": 0.002, "risk":0.07, "degrade_rate":0.008, "start_x":-100, "start_y":1800, "end_x":1000, "end_y":900},
+    {"id":5016, "from":20002, "to":10002, "distance": 1100, "traffic_load":0.5, "base_ms": 0.003, "risk":0.06, "degrade_rate":0.01, "start_x":1000, "start_y":900, "end_x":2100, "end_y":400}
   ]
 }
