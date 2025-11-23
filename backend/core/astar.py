@@ -88,7 +88,7 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
                 "edges": edge_path,
                 "totalScore": g_score[goal_id],
                 "finalSignalQuality": current_quality,
-                "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen")
+                "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen_spot")
             })
             return path
 
@@ -122,7 +122,7 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
                 continue
             
             # If neighbor is a regen node, reset signal quality to 1.0
-            if neighbor.type == "regen":
+            if neighbor.type == "regen_spot":
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,

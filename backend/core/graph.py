@@ -6,7 +6,7 @@ class Node:
     def __init__(self, id: int, name: str, node_type: str, x: float, y: float, edge_ids: list[int]):
         self.id = id                    # unique node ID (integer)
         self.name = name                # human-readable name
-        self.type = node_type           # "city" | "routing" | "regen"
+        self.type = node_type           # "city" | "routing" | "regen_spot" | "network_node" | "city_connection"
         self.x = x
         self.y = y
         self.edge_ids = edge_ids        # list of edge IDs connected to this node

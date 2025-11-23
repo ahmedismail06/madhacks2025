@@ -74,7 +74,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 "edges": edge_path,
                 "totalScore": distances[goal_id],
                 "finalSignalQuality": current_quality,
-                "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen")  # number of regeneration nodes in path
+                "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen_spot")  # number of regeneration nodes in path
             })
             return path
 
@@ -108,7 +108,7 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 continue
             
             # If neighbor is a regen node, reset signal quality to 1.0
-            if neighbor.type == "regen":
+            if neighbor.type == "regen_spot":
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,
