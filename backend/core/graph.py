@@ -13,12 +13,14 @@ class Node:
 
 
 class Edge:
-    def __init__(self, id: int, from_node: int, to_node: int, distance: float, cost: float, risk: float, degrade_rate: float, start_x: float = 0, start_y: float = 0, end_x: float = 0, end_y: float = 0):
+    def __init__(self, id: int, from_node: int, to_node: int, distance: float, traffic_load: float, base_ms: float, risk: float, degrade_rate: float, start_x: float = 0, start_y: float = 0, end_x: float = 0, end_y: float = 0):
         self.id = id                    # unique edge ID
         self.from_node = from_node      # source node ID
         self.to_node = to_node          # destination node ID
         self.distance = distance        # distance in km
-        self.cost = cost
+        self.traffic_load = traffic_load  # traffic load (0.0 to 1.0)
+        self.base_ms = base_ms          # base latency per unit distance in ms
+        self.latency_ms = distance * base_ms  # calculated latency in milliseconds
         self.risk = risk
         self.degrade_rate = degrade_rate
         self.start_x = start_x
