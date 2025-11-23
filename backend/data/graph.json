@@ -16,17 +16,17 @@
     {"id": 30002, "name": "regen_west_1", "type": "regen", "edges": [5004,5012], "x": -2000, "y": 1500}
   ],
   "edges": [
-    {"id":5001, "from":10001, "to":10003, "distance": 1200, "traffic_load":0.5, "base_ms":0.002, "risk":0.05, "degrade_rate":0.002, "start_x":-500, "start_y":2800, "end_x":-200, "end_y":1900},
+    {"id":5001, "from":10001, "to":10003, "distance": 400, "traffic_load":0.5, "base_ms":0.002, "risk":0.05, "degrade_rate":0.002, "start_x":-500, "start_y":2800, "end_x":-200, "end_y":1900},
     {"id":5002, "from":10001, "to":10009, "distance": 350, "traffic_load":0.3, "base_ms": 0.004, "risk":0.03, "degrade_rate":0.003, "start_x":-500, "start_y":2800, "end_x":-400, "end_y":3000},
-    {"id":5003, "from":10002, "to":10004, "distance": 1500, "traffic_load":0.6, "base_ms": 0.007, "risk":0.08, "degrade_rate":0.004, "start_x":2100, "start_y":400, "end_x":1200, "end_y":800},
+    {"id":5003, "from":10002, "to":10004, "distance": 200, "traffic_load":0.6, "base_ms": 0.007, "risk":0.08, "degrade_rate":0.004, "start_x":2100, "start_y":400, "end_x":1200, "end_y":800},
     {"id":5004, "from":10002, "to":10010, "distance": 600, "traffic_load":0.4, "base_ms": 0.005, "risk":0.04, "degrade_rate":0.002, "start_x":2100, "start_y":400, "end_x":-2100, "end_y":900},
-    {"id":5005, "from":10003, "to":10007, "distance": 1200, "traffic_load":0.5, "base_ms": 0.002, "risk":0.05, "degrade_rate":0.002, "start_x":-200, "start_y":1900, "end_x":0, "end_y":1500},
-    {"id":5006, "from":10004, "to":10005, "distance": 1600, "traffic_load":0.7, "base_ms": 0.001, "risk":0.06, "degrade_rate":0.003, "start_x":1200, "start_y":800, "end_x":1000, "end_y":300},
-    {"id":5007, "from":10005, "to":10008, "distance": 1200, "traffic_load":0.5, "base_ms": 0.003, "risk":0.05, "degrade_rate":0.003, "start_x":1000, "start_y":300, "end_x":500, "end_y":1200},
-    {"id":5008, "from":10006, "to":10010, "distance": 1800, "traffic_load":0.6, "base_ms": 0.006, "risk":0.07, "degrade_rate":0.002, "start_x":-2000, "start_y":2900, "end_x":-2100, "end_y":900},
+    {"id":5005, "from":10003, "to":10007, "distance": 100, "traffic_load":0.5, "base_ms": 0.002, "risk":0.05, "degrade_rate":0.002, "start_x":-200, "start_y":1900, "end_x":0, "end_y":1500},
+    {"id":5006, "from":10004, "to":10005, "distance": 300, "traffic_load":0.7, "base_ms": 0.001, "risk":0.06, "degrade_rate":0.003, "start_x":1200, "start_y":800, "end_x":1000, "end_y":300},
+    {"id":5007, "from":10005, "to":10008, "distance": 200, "traffic_load":0.5, "base_ms": 0.003, "risk":0.05, "degrade_rate":0.003, "start_x":1000, "start_y":300, "end_x":500, "end_y":1200},
+    {"id":5008, "from":10006, "to":10010, "distance": 400, "traffic_load":0.6, "base_ms": 0.006, "risk":0.07, "degrade_rate":0.002, "start_x":-2000, "start_y":2900, "end_x":-2100, "end_y":900},
     {"id":5009, "from":10007, "to":20001, "distance": 300, "traffic_load":0.2, "base_ms": 0.003, "risk":0.03, "degrade_rate":0.004, "start_x":0, "start_y":1500, "end_x":-100, "end_y":1800},
-    {"id":5010, "from":10008, "to":20002, "distance": 600, "traffic_load":0.3, "base_ms": 0.006, "risk":0.04, "degrade_rate":0.003, "start_x":500, "start_y":1200, "end_x":1000, "end_y":900},
-    {"id":5011, "from":10009, "to":30001, "distance": 50, "traffic_load":0.1, "base_ms": 0.001, "risk":0.02, "degrade_rate":0.002, "start_x":-400, "start_y":3000, "end_x":-350, "end_y":2900},
-    {"id":5012, "from":10010, "to":30002, "distance": 600, "traffic_load":0.2, "base_ms": 0.004, "risk":0.03, "degrade_rate":0.001, "start_x":-2100, "start_y":900, "end_x":-2000, "end_y":1500}
+    {"id":5010, "from":10008, "to":20002, "distance": 500, "traffic_load":0.3, "base_ms": 0.006, "risk":0.04, "degrade_rate":0.003, "start_x":500, "start_y":1200, "end_x":1000, "end_y":900},
+    {"id":5011, "from":10009, "to":30001, "distance": 100, "traffic_load":0.1, "base_ms": 0.001, "risk":0.02, "degrade_rate":0.002, "start_x":-400, "start_y":3000, "end_x":-350, "end_y":2900},
+    {"id":5012, "from":10010, "to":30002, "distance": 300, "traffic_load":0.2, "base_ms": 0.004, "risk":0.03, "degrade_rate":0.001, "start_x":-2100, "start_y":900, "end_x":-2000, "end_y":1500}
   ]
 }
