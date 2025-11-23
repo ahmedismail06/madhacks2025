@@ -1,16 +1,16 @@
 {
   "nodes": [
-    {"id": 10001, "name": "New York", "type": "city", "edges": [5001], "x": -500, "y": 2800},
-    {"id": 10002, "name": "Los Angeles", "type": "city", "edges": [5010], "x": 2100, "y": 400},
-    {"id": 10003, "name": "Chicago", "type": "city", "edges": [5001,5002], "x": -200, "y": 1900},
-    {"id": 10004, "name": "Denver", "type": "city", "edges": [5003], "x": 0, "y": 1500},
-    {"id": 20001, "name": "routing_midwest", "type": "routing", "edges": [5002,5003,5004], "x": -100, "y": 1800},
-    {"id": 30001, "name": "regen_1", "type": "regen", "edges": [5004,5005], "x": 300, "y": 1600},
-    {"id": 30002, "name": "regen_2", "type": "regen", "edges": [5005,5006], "x": 700, "y": 1400},
-    {"id": 30003, "name": "regen_3", "type": "regen", "edges": [5006,5007], "x": 1100, "y": 1200},
-    {"id": 30004, "name": "regen_4", "type": "regen", "edges": [5007,5008], "x": 1500, "y": 1000},
-    {"id": 30005, "name": "regen_5", "type": "regen", "edges": [5008,5009], "x": 1900, "y": 700},
-    {"id": 20002, "name": "routing_west", "type": "routing", "edges": [5009,5010], "x": 2000, "y": 600}
+    {"id": 10001, "name": "New York", "type": "city", "x": -500, "y": 2800},
+    {"id": 10002, "name": "Los Angeles", "type": "city", "x": 2100, "y": 400},
+    {"id": 10003, "name": "Chicago", "type": "city", "x": -200, "y": 1900},
+    {"id": 10004, "name": "Denver", "type": "city", "x": 0, "y": 1500},
+    {"id": 20001, "name": "routing_midwest", "type": "routing", "x": -100, "y": 1800},
+    {"id": 30001, "name": "regen_1", "type": "regen", "x": 300, "y": 1600},
+    {"id": 30002, "name": "regen_2", "type": "regen", "x": 700, "y": 1400},
+    {"id": 30003, "name": "regen_3", "type": "regen", "x": 1100, "y": 1200},
+    {"id": 30004, "name": "regen_4", "type": "regen", "x": 1500, "y": 1000},
+    {"id": 30005, "name": "regen_5", "type": "regen", "x": 1900, "y": 700},
+    {"id": 20002, "name": "routing_west", "type": "routing", "x": 2000, "y": 600}
   ],
   "edges": [
     {"id":5001, "from":10001, "to":10003, "distance": 40, "traffic_load":0.5, "base_ms":0.002, "risk":0.05, "degrade_rate":0.02, "start_x":-500, "start_y":2800, "end_x":-200, "end_y":1900},

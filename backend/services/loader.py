@@ -16,7 +16,7 @@ def load_graph(path="data/graph.json") -> Graph:
     # data format expected:
     # { "nodes": [...], "edges": [...] }
 
-    # Load all nodes first
+    # Load all nodes first (with empty edge lists initially)
     for n in data["nodes"]:
         if n["type"] == "city":
             city_name_to_id[n["name"]] = n["id"]
@@ -26,11 +26,11 @@ def load_graph(path="data/graph.json") -> Graph:
             node_type=n["type"],
             x=n["x"],
             y=n["y"],
-            edge_ids=n["edges"]
+            edge_ids=[]  # Start with empty list, will populate from edges
         )
         g.add_node(node)
 
-    # Load all edges
+    # Load all edges and add them to both connected nodes (undirected graph)
     for e in data["edges"]:
         edge = Edge(
             id=e["id"],
@@ -47,6 +47,10 @@ def load_graph(path="data/graph.json") -> Graph:
             end_y=e.get("end_y", 0)
         )
         g.add_edge(edge)
+        
+        # Add edge to both nodes (undirected graph)
+        g.nodes[e["from"]].edge_ids.append(e["id"])
+        g.nodes[e["to"]].edge_ids.append(e["id"])
 
     return g
 
