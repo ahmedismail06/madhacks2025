@@ -104,11 +104,10 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             
             # Calculate signal quality after traversing this edge
             # Use realistic fiber optic attenuation model:
-            # attenuation_db_per_km = degrade_rate (treat as dB/km)
-            # power_ratio_per_km = 10^(-attenuation/10)
-            # decay_factor = (power_ratio_per_km)^distance
-            power_ratio_per_km = 10 ** (-edge.degrade_rate / 10)
-            decay_factor = power_ratio_per_km ** edge.distance
+            # total_attenuation_db = degrade_rate * distance
+            # decay_factor = 10^(-total_attenuation/10)
+            total_attenuation_db = edge.degrade_rate * edge.distance
+            decay_factor = 10 ** (-total_attenuation_db / 10)
             new_quality = current_quality * decay_factor
             
             # Check if signal drops below threshold (0.1 = 10%)
