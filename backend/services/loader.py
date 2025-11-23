@@ -24,8 +24,8 @@ def load_graph(path="data/graph.json") -> Graph:
             id=n["id"],
             name=n["name"],
             node_type=n["type"],
-            lat=n["lat"],
-            lng=n["lng"],
+            x=n["x"],
+            y=n["y"],
             edge_ids=n["edges"]
         )
         g.add_node(node)
@@ -39,7 +39,11 @@ def load_graph(path="data/graph.json") -> Graph:
             distance=e["distance"],
             cost=e["cost"],
             risk=e["risk"],
-            degrade_rate=e["degrade_rate"]
+            degrade_rate=e["degrade_rate"],
+            start_x=e.get("start_x", 0),
+            start_y=e.get("start_y", 0),
+            end_x=e.get("end_x", 0),
+            end_y=e.get("end_y", 0)
         )
         g.add_edge(edge)
 

@@ -3,17 +3,17 @@
 # ===========================================
 
 class Node:
-    def __init__(self, id: int, name: str, node_type: str, lat: float, lng: float, edge_ids: list[int]):
+    def __init__(self, id: int, name: str, node_type: str, x: float, y: float, edge_ids: list[int]):
         self.id = id                    # unique node ID (integer)
         self.name = name                # human-readable name
         self.type = node_type           # "city" | "routing" | "regen"
-        self.lat = lat
-        self.lng = lng
+        self.x = x
+        self.y = y
         self.edge_ids = edge_ids        # list of edge IDs connected to this node
 
 
 class Edge:
-    def __init__(self, id: int, from_node: int, to_node: int, distance: float, cost: float, risk: float, degrade_rate: float):
+    def __init__(self, id: int, from_node: int, to_node: int, distance: float, cost: float, risk: float, degrade_rate: float, start_x: float = 0, start_y: float = 0, end_x: float = 0, end_y: float = 0):
         self.id = id                    # unique edge ID
         self.from_node = from_node      # source node ID
         self.to_node = to_node          # destination node ID
@@ -21,6 +21,10 @@ class Edge:
         self.cost = cost
         self.risk = risk
         self.degrade_rate = degrade_rate
+        self.start_x = start_x
+        self.start_y = start_y
+        self.end_x = end_x
+        self.end_y = end_y
 
     def get_other_node(self, node_id: int) -> int:
         """Get the other end of this edge given one node ID"""
