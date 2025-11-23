@@ -68,29 +68,36 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
 
         # check if we reached the goal
         if current_id == goal_id:
-            # reconstruct path
-            path = []
-            edge_path = []
+            # reconstruct path with node details
+            path_nodes = []
             node = current_id
             
             while node in came_from:
+                node_obj = graph.nodes[node]
+                path_nodes.append({
+                    "x": node_obj.x,
+                    "y": node_obj.y,
+                    "type": node_obj.type
+                })
                 prev_node, edge_id = came_from[node]
-                path.append(node)
-                edge_path.append(edge_id)
                 node = prev_node
             
-            path.append(start_id)
-            path = path[::-1]
-            edge_path = edge_path[::-1]
+            # Add start node
+            start_node = graph.nodes[start_id]
+            path_nodes.append({
+                "x": start_node.x,
+                "y": start_node.y,
+                "type": start_node.type
+            })
+            path_nodes = path_nodes[::-1] # reverse path to start->goal
             
             await send_event("final-path", {
-                "path": path,
-                "edges": edge_path,
+                "path": path_nodes,
                 "totalScore": g_score[goal_id],
                 "finalSignalQuality": current_quality,
-                "regenerations": sum(1 for nid in path if graph.nodes[nid].type == "regen_spot")
+                "regenerations": sum(1 for n in path_nodes if n["type"] == "regen_spot")
             })
-            return path
+            return path_nodes
 
         # explore neighbors through edges
         for edge_id in current.edge_ids:
@@ -153,5 +160,5 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             else:
                 await send_event("edge", {"edgeId": edge_id, "status": "failed", "reason": "not_better"})
 
-    await send_event("fail", {"reason": "No route found"})
+    await send_event("no-path", {"reason": "No route found"})
     return None

@@ -34,7 +34,8 @@ def make_event_sender(job_id: str):
         buffer.append({"event": event_type, "data": payload})
         
         # Send batch when we have 10 events, or if it's a final event
-        if len(buffer) >= 10 or event_type in ["final-path", "no-path"]:
+        is_final = event_type in ["final-path", "no-path", "fail"]
+        if len(buffer) >= 10 or is_final:
             await queue.put({"event": "batch", "data": buffer.copy()})
             buffer.clear()
     
