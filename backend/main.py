@@ -11,7 +11,7 @@ from api.stream import router as stream_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=[""],  # In production, replace with specific origins
     allow_credentials=True,  # Changed to True
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
