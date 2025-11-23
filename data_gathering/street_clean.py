@@ -11,7 +11,7 @@ import os
 # CONFIGURATION
 SHAPEFILE_PATH = "us_interstate_data/tl_2025_us_primaryroads.shp"
 CLEAN_FILE_PATH = "cleaned_network.gpkg"
-REGEN_SPACING_MILES = 50.0
+REGEN_SPACING_MILES = 35.0
 INTERSECTIONS_CSV = "cleaned_intersections.csv"
 CITIES_CSV = "uscities.csv"  # CSV with columns: name, lat, lon, population (optional)
 SNAP_TOLERANCE_METERS = 500.0
