@@ -103,7 +103,9 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,
-                    "signalQuality": new_quality
+                    "signalQuality": new_quality,
+                    "x": neighbor.x,
+                    "y": neighbor.y
                 })
             
             tentative_dist = distances[current_id] + weight_func(edge)

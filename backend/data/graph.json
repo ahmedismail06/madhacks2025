@@ -4,13 +4,18 @@
     {"id": 10002, "name": "Los Angeles", "type": "city", "x": 2100, "y": 400},
     {"id": 10003, "name": "Chicago", "type": "city", "x": -200, "y": 1900},
     {"id": 10004, "name": "Denver", "type": "city", "x": 0, "y": 1500},
+    {"id": 10005, "name": "Dallas", "type": "city", "x": 800, "y": 1000},
+    {"id": 10006, "name": "Phoenix", "type": "city", "x": 1600, "y": 600},
     {"id": 20001, "name": "routing_midwest", "type": "routing", "x": -100, "y": 1800},
-    {"id": 30001, "name": "regen_1", "type": "regen", "x": 300, "y": 1600},
-    {"id": 30002, "name": "regen_2", "type": "regen", "x": 700, "y": 1400},
-    {"id": 30003, "name": "regen_3", "type": "regen", "x": 1100, "y": 1200},
-    {"id": 30004, "name": "regen_4", "type": "regen", "x": 1500, "y": 1000},
-    {"id": 30005, "name": "regen_5", "type": "regen", "x": 1900, "y": 700},
-    {"id": 20002, "name": "routing_west", "type": "routing", "x": 2000, "y": 600}
+    {"id": 20002, "name": "routing_west", "type": "routing", "x": 2000, "y": 600},
+    {"id": 20003, "name": "routing_south", "type": "routing", "x": 900, "y": 900},
+    {"id": 30001, "name": "regen_north_1", "type": "regen", "x": 300, "y": 1600},
+    {"id": 30002, "name": "regen_north_2", "type": "regen", "x": 700, "y": 1400},
+    {"id": 30003, "name": "regen_north_3", "type": "regen", "x": 1100, "y": 1200},
+    {"id": 30004, "name": "regen_north_4", "type": "regen", "x": 1500, "y": 1000},
+    {"id": 30005, "name": "regen_north_5", "type": "regen", "x": 1900, "y": 700},
+    {"id": 30006, "name": "regen_south_1", "type": "regen", "x": 1200, "y": 800},
+    {"id": 30007, "name": "regen_south_2", "type": "regen", "x": 1700, "y": 650}
   ],
   "edges": [
     {"id":5001, "from":10001, "to":10003, "distance": 40, "traffic_load":0.5, "base_ms":0.002, "risk":0.05, "degrade_rate":0.02, "start_x":-500, "start_y":2800, "end_x":-200, "end_y":1900},
@@ -22,6 +27,13 @@
     {"id":5007, "from":30003, "to":30004, "distance": 41, "traffic_load":0.7, "base_ms":0.004, "risk":0.06, "degrade_rate":0.028, "start_x":1100, "start_y":1200, "end_x":1500, "end_y":1000},
     {"id":5008, "from":30004, "to":30005, "distance": 39, "traffic_load":0.5, "base_ms":0.003, "risk":0.05, "degrade_rate":0.033, "start_x":1500, "start_y":1000, "end_x":1900, "end_y":700},
     {"id":5009, "from":30005, "to":20002, "distance": 37, "traffic_load":0.4, "base_ms":0.002, "risk":0.04, "degrade_rate":0.027, "start_x":1900, "start_y":700, "end_x":2000, "end_y":600},
-    {"id":5010, "from":20002, "to":10002, "distance": 36, "traffic_load":0.5, "base_ms":0.003, "risk":0.05, "degrade_rate":0.024, "start_x":2000, "start_y":600, "end_x":2100, "end_y":400}
+    {"id":5010, "from":20002, "to":10002, "distance": 36, "traffic_load":0.5, "base_ms":0.003, "risk":0.05, "degrade_rate":0.024, "start_x":2000, "start_y":600, "end_x":2100, "end_y":400},
+    {"id":5011, "from":10004, "to":10005, "distance": 42, "traffic_load":0.4, "base_ms":0.0025, "risk":0.04, "degrade_rate":0.022, "start_x":0, "start_y":1500, "end_x":800, "end_y":1000},
+    {"id":5012, "from":10005, "to":20003, "distance": 38, "traffic_load":0.35, "base_ms":0.002, "risk":0.035, "degrade_rate":0.024, "start_x":800, "start_y":1000, "end_x":900, "end_y":900},
+    {"id":5013, "from":20003, "to":30006, "distance": 40, "traffic_load":0.45, "base_ms":0.0028, "risk":0.045, "degrade_rate":0.026, "start_x":900, "start_y":900, "end_x":1200, "end_y":800},
+    {"id":5014, "from":30006, "to":10006, "distance": 41, "traffic_load":0.4, "base_ms":0.003, "risk":0.04, "degrade_rate":0.025, "start_x":1200, "start_y":800, "end_x":1600, "end_y":600},
+    {"id":5015, "from":10006, "to":30007, "distance": 38, "traffic_load":0.35, "base_ms":0.0025, "risk":0.035, "degrade_rate":0.023, "start_x":1600, "start_y":600, "end_x":1700, "end_y":650},
+    {"id":5016, "from":30007, "to":20002, "distance": 39, "traffic_load":0.3, "base_ms":0.002, "risk":0.03, "degrade_rate":0.021, "start_x":1700, "start_y":650, "end_x":2000, "end_y":600},
+    {"id":5017, "from":30003, "to":20003, "distance": 43, "traffic_load":0.55, "base_ms":0.0032, "risk":0.055, "degrade_rate":0.029, "start_x":1100, "start_y":1200, "end_x":900, "end_y":900}
   ]
 }
