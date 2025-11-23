@@ -5,12 +5,14 @@
 from flask import Flask, jsonify
 from api.route import route_bp
 from api.stream import stream_bp
+from api.result import result_bp
 
 app = Flask(__name__)
 
 # Register blueprints
 app.register_blueprint(route_bp, url_prefix="/api")
 app.register_blueprint(stream_bp, url_prefix="/api")
+app.register_blueprint(result_bp, url_prefix="/api")
 
 
 @app.route("/")
