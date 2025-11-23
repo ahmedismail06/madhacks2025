@@ -80,10 +80,16 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 continue
             
             # Calculate signal quality after traversing this edge
-            new_quality = current_quality - edge.degrade_rate*edge.distance
+            # Use realistic fiber optic attenuation model:
+            # attenuation_db_per_km = degrade_rate (treat as dB/km)
+            # power_ratio_per_km = 10^(-attenuation/10)
+            # decay_factor = (power_ratio_per_km)^distance
+            power_ratio_per_km = 10 ** (-edge.degrade_rate / 10)
+            decay_factor = power_ratio_per_km ** edge.distance
+            new_quality = current_quality * decay_factor
             
-            # Check if signal drops below threshold
-            if new_quality < 0:
+            # Check if signal drops below threshold (0.1 = 10%)
+            if new_quality < 0.1:
                 await send_event("edge", {
                     "edgeId": edge_id,
                     "status": "failed",
