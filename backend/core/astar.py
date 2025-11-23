@@ -106,7 +106,8 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             # Use realistic fiber optic attenuation model:
             # total_attenuation_db = degrade_rate * distance
             # decay_factor = 10^(-total_attenuation/10)
-            total_attenuation_db = edge.degrade_rate * edge.distance
+            # Scale down by 10x to make paths more viable
+            total_attenuation_db = (edge.degrade_rate * edge.distance) / 10
             decay_factor = 10 ** (-total_attenuation_db / 10)
             new_quality = current_quality * decay_factor
             
