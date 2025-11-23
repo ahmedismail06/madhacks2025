@@ -51,4 +51,6 @@ def start_route():
     thread = threading.Thread(target=run_async_task, daemon=True)
     thread.start()
 
-    return jsonify({"jobId": job_id, "algorithm": algorithm})
+    response = jsonify({"jobId": job_id, "algorithm": algorithm})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response

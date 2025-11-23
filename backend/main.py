@@ -15,7 +15,9 @@ app.register_blueprint(stream_bp, url_prefix="/api")
 
 @app.route("/")
 def root():
-    return jsonify({"message": "Fiber Route API", "status": "running"})
+    response = jsonify({"message": "Fiber Route API", "status": "running"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 if __name__ == "__main__":

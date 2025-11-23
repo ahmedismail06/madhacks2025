@@ -49,4 +49,6 @@ def stream_route():
             loop.close()
             print(f"[STREAM] Stream closed for job {job_id} after {event_count} events")
 
-    return Response(event_generator(), mimetype="text/event-stream")
+    response = Response(event_generator(), mimetype="text/event-stream")
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response

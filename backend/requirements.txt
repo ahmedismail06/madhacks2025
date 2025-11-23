@@ -1,2 +1,2 @@
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
+flask==3.0.0
+gunicorn==21.2.0
