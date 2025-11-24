@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { Graph } from '../../../components'
 import network from '../../../public/network_leaflet.json'
 
@@ -16,8 +16,7 @@ export default function Demo() {
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
   const [result, setResult] = useState<string | null>(null)
-  const [streamQueue, setStreamQueue] = useState<any[]>([])
-  const streamAbortRef = useRef<AbortController | null>(null)
+  const [pathData, setPathData] = useState<Array<{x: number, y: number, type: string}> | null>(null)
 
   async function handleCalculate() {
     if (!source || !destination) {
@@ -29,129 +28,51 @@ export default function Demo() {
       return
     }
 
-    // Build weights array [latency, cost, risk] per user request (latency, cost, risk order)
-    const weights = [parseFloat(latencyWeight), parseFloat(costWeight), parseFloat(riskWeight)]
-
-    // API host
-    const API_HOST = '34.27.157.215'
-
     try {
-      // Abort any previous streaming request
-      if (streamAbortRef.current) {
-        streamAbortRef.current.abort()
-        streamAbortRef.current = null
-      }
+      setResult('Calculating route...')
+      setPathData(null)
 
-      // Clear previous stream queue
-      setStreamQueue([])
-
-      // Perform health check
-      const healthURL = `http://${API_HOST}:8000/`
-      console.log('Performing health check:', healthURL)
-
-      const healthResp = await fetch(healthURL, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      })
-      
-      if (!healthResp.ok) {
-        const txt = await healthResp.text()
-        throw new Error(`route id request failed: ${healthResp.status} ${txt}`)
-      }
-
-      console.log('API health check passed')
-
-      // Make GET request to /api/route with from,to,weights,algorithm as query params
+      // First, make POST request to initiate route calculation
       const params = new URLSearchParams()
       params.set('start', source)
       params.set('goal', destination)
-      // algorithm: 'dijkstra' or 'a-star'
-      params.set('w_lat', weights[0].toString())
-      params.set('w_traffic', weights[1].toString())
-      params.set('w_risk', weights[2].toString())
+      params.set('w_lat', latencyWeight)
+      params.set('w_traffic', costWeight)
+      params.set('w_risk', riskWeight)
       params.set('algorithm', algorithm)
 
-      const routeUrl = `http://${API_HOST}:8000/api/route?${params.toString()}`
-      console.log('Requesting job id:', routeUrl)
+      const postUrl = `http://127.0.0.1:8000/api/route?${params.toString()}`
+      console.log('POST request:', postUrl)
 
-      const idResp = await fetch(routeUrl, {
+      const postResponse = await fetch(postUrl, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json'
-        }
       })
 
-      if (!idResp.ok) {
-        const txt = await idResp.text()
-        throw new Error(`route id request failed: ${idResp.status} ${txt}`)
+      if (!postResponse.ok) {
+        throw new Error(`POST request failed: ${postResponse.status}`)
       }
 
-      const idJson = await idResp.json()
-      // const jobId = idJson?.id ?? idJson?.job_id ?? idJson?.job ?? idJson
-      const jobId = idJson.jobId || idJson.job_id || idJson.id;
-      console.log('Received job id:', jobId)
-      setResult(`Started job ${jobId}`)
+      // Then fetch the result
+      const resultUrl = `http://127.0.0.1:8000/api/route/result`
+      console.log('Fetching result:', resultUrl)
 
-      // Now POST to the streaming endpoint
-      const streamUrl = `http://${API_HOST}:8000/api/route/stream?id=${encodeURIComponent(jobId)}`
-
-      const abortCtrl = new AbortController()
-      streamAbortRef.current = abortCtrl
-
-      console.log('[STREAM] Starting stream:', streamUrl);
-
-      const streamResp = await fetch(streamUrl, {
-        method: 'GET',
-        signal: abortCtrl.signal,
-        headers: {
-          'Accept': 'text/event-stream, application/json, text/plain'
-        }
-      })
-
-      if (!streamResp.ok || !streamResp.body) {
-        const txt = await streamResp.text()
-        throw new Error(`stream request failed: ${streamResp.status} ${txt}`)
+      const response = await fetch(resultUrl)
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
       }
 
-      // Read streaming body and print chunks to console
-      const reader = streamResp.body.getReader()
-      const decoder = new TextDecoder()
-      let done = false
-      let buffer = ''
+      const data = await response.json()
+      console.log('API Response:', data)
 
-      while (!done) {
-        const { value, done: rdone } = await reader.read()
-        done = rdone
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true })
-          buffer += chunk
-          
-          // Try to parse complete JSON objects (newline-delimited)
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || '' // Keep incomplete line in buffer
-          
-          for (const line of lines) {
-            if (line.trim()) {
-              try {
-                const parsed = JSON.parse(line)
-                console.log('[STREAM]', parsed)
-                // Add to queue
-                setStreamQueue((prev) => [...prev, parsed])
-              } catch (e) {
-                // console.log('[STREAM] Raw:', line)
-              }
-            }
-          }
-        }
+      if (data.path && Array.isArray(data.path)) {
+        setPathData(data.path)
+        setResult(`Path found with ${data.path.length} nodes`)
+      } else {
+        setResult('No path data in response')
       }
-
-      console.log('Stream completed')
-      setResult((prev) => (prev ? prev + ' — stream completed' : 'stream completed'))
-      streamAbortRef.current = null
     } catch (err) {
-      console.error('Error during route/stream:', err)
+      console.error('Error fetching route:', err)
       setResult(`Error: ${(err as Error).message}`)
     }
   }
@@ -344,7 +265,7 @@ export default function Demo() {
                 strokeWidth={3.5}
                 showPoints={true}
                 pointRadius={5}
-                streamData={streamQueue}
+                pathData={pathData}
               />
             </div>
           </div>
