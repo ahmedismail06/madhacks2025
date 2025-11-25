@@ -1,84 +1,84 @@
 # ===========================================
-# core/search.py — Dijkstra's algorithm with event callbacks
+# core/dijkstra.py - Dijkstra's pathfinding algorithm
 # ===========================================
+# Implements Dijkstra's shortest path algorithm with signal quality tracking.
+# Explores nodes in order of total cost, guaranteeing optimal path.
 
 import heapq
 from core.graph import Graph
 
 
-# send_event(event_name, payload) is a function passed from caller
 async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event):
+    """
+    Find optimal fiber optic path using Dijkstra's algorithm.
+    Explores uniformly in all directions without goal knowledge.
     
-    # use global city_name_to_id mapping to find IDs
+    Args:
+        graph: Fiber network graph
+        start: Starting city name  
+        goal: Destination city name
+        weight_func: Edge cost calculation function
+        send_event: Async callback for visualization events
+    
+    Returns:
+        List of nodes [{x, y, type}] or None if no path found
+    """
+    # Look up city node IDs from names
     from services.loader import city_name_to_id
     start_id = city_name_to_id.get(start)
     goal_id = city_name_to_id.get(goal)
     
-    print(f"[DIJKSTRA] Starting search from '{start}' (ID: {start_id}) to '{goal}' (ID: {goal_id})")
-    
-    if start_id is None:
-        print(f"[DIJKSTRA ERROR] Start city '{start}' not found in city_name_to_id mapping")
-        return None
-    if goal_id is None:
-        print(f"[DIJKSTRA ERROR] Goal city '{goal}' not found in city_name_to_id mapping")
+    # Validate city names exist
+    if start_id is None or goal_id is None:
+        await send_event("no-path", {"reason": "Invalid city name"})
         return None
     
-    open_heap = [] # min-heap of (cost, node_id, signal_quality)
-    heapq.heappush(open_heap, (0, start_id, 1.0)) 
+    # Initialize Dijkstra's data structures
+    open_heap = []  # Priority queue: (cost, node_id, signal_quality)
+    heapq.heappush(open_heap, (0, start_id, 1.0))
+    distances = {start_id: 0}  # Best known cost to each node
+    signal_quality = {start_id: 1.0}  # Signal quality at each node  
+    came_from: dict[int, tuple[int, int]] = {}  # Backtracking map
+    visited = set()  # Processed nodes
 
-    distances = {start_id: 0} # shortest known distance to each node
-    signal_quality = {start_id: 1.0}  # track signal quality at each node
-    came_from: dict[int, tuple[int, int]] = {}  # node_id -> (previous_node_id, edge_id)
-    visited = set()
-    
-    print(f"[DIJKSTRA] Start node edges: {len(graph.nodes[start_id].edge_ids)}")
-    print(f"[DIJKSTRA] Goal node edges: {len(graph.nodes[goal_id].edge_ids)}")
+    # Send initial event
+    await send_event("start", {
+        "start": start_id,
+        "goal": goal_id,
+        "initialQuality": 1.0,
+        "start_x": graph.nodes[start_id].x,
+        "start_y": graph.nodes[start_id].y,
+        "end_x": graph.nodes[goal_id].x,
+        "end_y": graph.nodes[goal_id].y
+    })
 
-    await send_event("start", 
-                     {"start": start_id, 
-                      "goal": goal_id, 
-                      "initialQuality": 1.0, 
-                      "start_x": graph.nodes[start_id].x, 
-                      "start_y": graph.nodes[start_id].y, 
-                      "end_x": graph.nodes[goal_id].x, 
-                      "end_y": graph.nodes[goal_id].y}) # send start event
-    
-    nodes_explored = 0
-
+    # Main Dijkstra loop - process nodes by increasing cost
     while open_heap:
-        nodes_explored += 1
         current_dist, current_id, current_quality = heapq.heappop(open_heap)
         
-        # skip if already visited
+        # Skip if already visited
         if current_id in visited:
             continue
         
         visited.add(current_id)
         current = graph.nodes[current_id]
 
-        # send visited event with signal quality
-        # if it's a city node, include the name, if not, just use type + id
+        # Send node visit event
         node_name = current.name if current.name else f"{current.type}{current.id}"
-        
-        # Debug: log when we visit different node types
-        if current.type == "regen_spot":
-            print(f"[DIJKSTRA] Visiting regen_spot node {current_id} with signal quality {current_quality}")
-        
         await send_event("node", {
-            "nodeName": node_name, 
+            "nodeName": node_name,
             "status": "visited",
             "x": current.x,
             "y": current.y,
             "signalQuality": current_quality
         })
 
-        # check if we reached the goal
+        # Goal reached - reconstruct path
         if current_id == goal_id:
-            print(f"[DIJKSTRA SUCCESS] Found path! Explored {nodes_explored} nodes")
-            # reconstruct path with node details
             path_nodes = []
             node = current_id
             
+            # Backtrack from goal to start
             while node in came_from:
                 node_obj = graph.nodes[node]
                 path_nodes.append({
@@ -96,8 +96,9 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 "y": start_node.y,
                 "type": start_node.type
             })
-            path_nodes = path_nodes[::-1] # reverse path to start->goal
+            path_nodes = path_nodes[::-1]  # Reverse to start->goal order
             
+            # Send final path event
             await send_event("final-path", {
                 "path": path_nodes,
                 "totalScore": distances[goal_id],
@@ -106,36 +107,25 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
             })
             return path_nodes
 
-        # explore neighbors through edges
+        # Explore neighbors
         for edge_id in current.edge_ids:
             edge = graph.edges[edge_id]
             neighbor_id = edge.get_other_node(current_id)
             neighbor = graph.nodes[neighbor_id]
             
-            # Debug: log when we're about to explore a regen_spot neighbor
-            if neighbor.type == "regen_spot":
-                print(f"[DIJKSTRA] Found regen_spot neighbor {neighbor_id} from node {current_id}, current signal: {current_quality:.4f}")
-            
-            # skip if neighbor already visited
+            # Skip already-visited nodes
             if neighbor_id in visited:
                 continue
             
-            # Calculate signal quality after traversing this edge
-            # Use realistic fiber optic attenuation model:
-            # total_attenuation_db = degrade_rate * distance
-            # decay_factor = 10^(-total_attenuation/10)
-            # Scale down by 10x to make paths more viable
+            # Calculate signal quality degradation
+            # Fiber optic attenuation: decay_factor = 10^(-attenuation_dB/10)
+            # Scaled by 10x to allow longer viable paths
             total_attenuation_db = (edge.degrade_rate * edge.distance) / 10
             decay_factor = 10 ** (-total_attenuation_db / 10)
             new_quality = current_quality * decay_factor
             
-            # Debug: log significant degradation
-            if new_quality < 0.3 and current_quality > 0.3:
-                print(f"[DIJKSTRA] Significant degradation on edge {edge_id}: {current_quality:.4f} -> {new_quality:.4f} (distance={edge.distance:.2f}km, degrade_rate={edge.degrade_rate})")
-            
-            # Check if signal drops below threshold (0.1 = 10%)
+            # Reject if signal drops below 10% threshold
             if new_quality < 0.1:
-                print(f"[DIJKSTRA] Signal degraded below threshold at edge {edge_id} (quality: {new_quality:.4f})")
                 await send_event("edge", {
                     "edgeId": edge_id,
                     "status": "failed",
@@ -144,9 +134,8 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                 })
                 continue
             
-            # If neighbor is a regen node, reset signal quality to 1.0
+            # Regeneration spots reset signal to 100%
             if neighbor.type == "regen_spot":
-                print(f"[DIJKSTRA] Signal regenerated at node {neighbor_id}")
                 new_quality = 1.0
                 await send_event("regeneration", {
                     "nodeId": neighbor_id,
@@ -155,9 +144,10 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                     "y": neighbor.y
                 })
             
+            # Calculate total cost via this path
             tentative_dist = distances[current_id] + weight_func(edge)
 
-            # If this is a better path to the neighbor
+            # Update if better path found
             if neighbor_id not in distances or tentative_dist < distances[neighbor_id]:
                 distances[neighbor_id] = tentative_dist
                 signal_quality[neighbor_id] = new_quality
@@ -174,13 +164,12 @@ async def dijkstra(graph: Graph, start: str, goal: str, weight_func, send_event)
                     "degradation": edge.degrade_rate
                 })
             else:
-                await send_event("edge", 
-                                 {"edgeId": edge_id, 
-                                  "status": "failed", 
-                                  "reason": "not_better"})
+                await send_event("edge", {
+                    "edgeId": edge_id,
+                    "status": "failed",
+                    "reason": "not_better"
+                })
 
-    print(f"[DIJKSTRA FAIL] No route found after exploring {nodes_explored} nodes")
-    print(f"[DIJKSTRA FAIL] Visited {len(visited)} unique nodes")
-    print(f"[DIJKSTRA FAIL] Final distances dict size: {len(distances)}")
+    # No path found after exploring all reachable nodes
     await send_event("no-path", {"reason": "No route found"})
     return None

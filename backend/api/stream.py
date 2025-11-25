@@ -1,6 +1,8 @@
 # ===========================================
-# api/stream.py — SSE streaming
+# api/stream.py - Server-Sent Events streaming
 # ===========================================
+# Streams pathfinding events in real-time using SSE protocol.
+# Allows frontend to visualize algorithm progress.
 
 import json
 import asyncio
@@ -12,42 +14,42 @@ stream_bp = Blueprint('stream', __name__)
 
 @stream_bp.route("/route/stream", methods=["GET"])
 def stream_route():
+    """
+    Stream pathfinding events for a specific job.
+    
+    Query Parameters:
+        id: Job ID returned from /route endpoint
+    
+    Returns:
+        Server-Sent Events stream with algorithm progress
+    """
     job_id = request.args.get('id')
-    
-    print(f"[STREAM] Client connected to stream for job ID: {job_id}")
-    print(f"[STREAM] Request headers: {dict(request.headers)}")
-    print(f"[STREAM] Client host: {request.remote_addr}")
-    
-    queue = get_queue(job_id) # get the queue for this job_id
+    queue = get_queue(job_id)
     
     if queue is None:
-        print(f"[STREAM ERROR] No queue found for job ID: {job_id}")
         return json.dumps({"error": "Job not found"}), 404
 
     def event_generator():
-        event_count = 0
+        """Generate SSE stream from job queue."""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
         try:
             while True:
-                # Get event from queue
+                # Wait for next event from pathfinding algorithm
                 event = loop.run_until_complete(asyncio.wait_for(queue.get(), timeout=30.0))
                 event_type = event['event']
                 event_data = json.dumps(event['data'])
-                event_count += 1
                 
-                print(f"[STREAM] Sending event #{event_count} type={event_type} for job {job_id}")
-                
+                # Format as SSE
                 yield f"event: {event_type}\ndata: {event_data}\n\n"
                 
         except asyncio.TimeoutError:
-            print(f"[STREAM] Timeout for job {job_id} after {event_count} events")
+            pass  # Stream timeout, close gracefully
         except Exception as e:
-            print(f"[STREAM ERROR] Exception for job {job_id}: {e}")
+            pass  # Handle errors gracefully
         finally:
             loop.close()
-            print(f"[STREAM] Stream closed for job {job_id} after {event_count} events")
 
     response = Response(event_generator(), mimetype="text/event-stream")
     response.headers.add('Access-Control-Allow-Origin', '*')

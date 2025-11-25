@@ -11,8 +11,30 @@ city_name_to_id = {}  # mapping of city names to node IDs
 # save the dictionary to an external file at the end of loading
 
 def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Graph:
+    """
+    Load the network graph from JSON data files at application startup.
+    
+    Reads network topology from nodes.json and edges.json in the data/ directory,
+    constructs a Graph object representing the fiber optic network, and creates
+    a city name-to-ID mapping for easy lookup.
+    
+    Args:
+        edges_path: Path to edges JSON file (default: "data/edges.json")
+        nodes_path: Path to nodes JSON file (default: "data/nodes.json")
+    
+    Returns:
+        Graph: Populated graph with all nodes and edges from the data files.
+              Nodes include cities, network nodes, regeneration spots, etc.
+              Edges include fiber cables with properties like distance, traffic,
+              risk, and signal degradation rates.
+    
+    Side Effects:
+        - Writes city_name_to_id.json mapping file to data/ directory
+        - Prints loading statistics to console
+    """
     g = Graph()
 
+    # Load network topology from JSON files
     with open(nodes_path, "r") as f:
         nodes_data = json.load(f)
     with open(edges_path, "r") as f:
@@ -20,8 +42,8 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
 
     print(f"[LOADER] Loading {len(nodes_data)} nodes...")
     
-    # Load all nodes first (with empty edge lists initially)
-    # nodes.json is an array, not an object with "nodes" key
+    # Load all nodes first (with empty edge lists, populated later from edges)
+    # Track cities separately for easy lookup by name
     city_nodes = []
     node_type_counts = {}
     
@@ -54,31 +76,22 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
     print(f"[LOADER] Node type counts: {node_type_counts}")
     print(f"[LOADER] Loading {len(edges_data)} edges...")
 
-    # Load all edges and add them to both connected nodes (undirected graph)
-    # edges.json is an array, not an object with "edges" key
+    # Load all edges and populate node adjacency lists (undirected graph)
     edges_with_geometry = 0
     edges_road_connection = 0
     edges_skipped = 0
-    sample_city_edges_checked = 0
     
     for e in edges_data:
         edge_id = int(e["id"])
         source_id = int(e["source"])
         target_id = int(e["target"])
         
-        # Debug: check edges involving New York city node
-        if sample_city_edges_checked < 5 and (source_id == 49233 or target_id == 49233):
-            print(f"[LOADER DEBUG] Edge {edge_id} involves New York: source={source_id}, target={target_id}")
-            print(f"[LOADER DEBUG]   has geometry: {'geometry' in e and e['geometry']}")
-            print(f"[LOADER DEBUG]   road_name: {e.get('road_name', 'N/A')}")
-            sample_city_edges_checked += 1
-        
         # Check if both nodes exist
         if source_id not in g.nodes or target_id not in g.nodes:
             edges_skipped += 1
             continue
         
-        # Extract geometry coordinates if available, if not, check if city connection
+        # Edges with geometry are fiber cables with explicit coordinate paths
         if "geometry" in e and e["geometry"]:
             coords = e["geometry"]
             start_x, start_y = coords[0]
@@ -107,8 +120,8 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
             if target_id in g.nodes:
                 g.nodes[target_id].edge_ids.append(edge_id)
         
+        # Edges without geometry are direct connections (city-to-network links)
         elif not e.get("geometry"):
-            # This is a connection without geometry (likely city-to-network or city_connection)
             edge = Edge(
                 id=edge_id,
                 from_node=source_id,
@@ -138,21 +151,14 @@ def load_graph(edges_path="data/edges.json", nodes_path="data/nodes.json") -> Gr
     print(f"[LOADER] Loaded {edges_road_connection} road connection edges")
     print(f"[LOADER] Skipped {edges_skipped} edges")
     
-    # Count regen_spot nodes and check their connectivity
+    # Verify regeneration spot connectivity
     regen_nodes = [nid for nid, node in g.nodes.items() if node.type == "regen_spot"]
     print(f"[LOADER] Found {len(regen_nodes)} regen_spot nodes")
     if len(regen_nodes) > 0:
         sample_regen = g.nodes[regen_nodes[0]]
         print(f"[LOADER] Sample regen_spot node {regen_nodes[0]}: {len(sample_regen.edge_ids)} edges")
     
-    # Print sample city edge counts
-    for city_name in list(city_name_to_id.keys())[:3]:
-        city_id = city_name_to_id[city_name]
-        edge_count = len(g.nodes[city_id].edge_ids)
-        print(f"[LOADER] City '{city_name}' (ID: {city_id}) has {edge_count} edges")
-
-
-    # Save the city_name_to_id dictionary to an external file
+    # Save city name mapping for frontend use
     with open("data/city_name_to_id.json", "w") as f:
         json.dump(city_name_to_id, f)
 
