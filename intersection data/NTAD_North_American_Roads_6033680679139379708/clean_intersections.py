@@ -8,7 +8,7 @@ INPUT_CSV = "mainland_intersections.csv"
 
 # 2. Your Grid/Lines (The file with the blue lines)
 # Make sure this path is correct based on your folder structure!
-ROADS_SHP = "us_interstate_data/tl_2025_us_primaryroads.shp"
+ROADS_SHP = "/Users/ahmedismail/Desktop/madhacks2025/Street data/us_interstate_data/tl_2025_us_primaryroads.shp"
 
 # 3. The Output (The clean file)
 OUTPUT_CSV = "cleaned_intersections.csv"
