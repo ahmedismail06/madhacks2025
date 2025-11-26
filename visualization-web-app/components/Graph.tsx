@@ -111,7 +111,7 @@ export default function Graph({
 		<MapContainer
 			center={center}
 			zoom={4}
-			style={{ width: '100%', height: '100%' }}
+			style={{ width: '100%', height: '100%', borderRadius: '6px', overflow: 'hidden' }}
 			className={className}
 			scrollWheelZoom={false}
 			doubleClickZoom={false}
