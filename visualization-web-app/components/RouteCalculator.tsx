@@ -43,8 +43,9 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
       params.set('w_traffic', costWeight)
       params.set('w_risk', riskWeight)
       params.set('algorithm', algorithm)
-
-      const postUrl = `http://127.0.0.1:8000/api/route?${params.toString()}`
+      // https://madhacks2025.onrender.com
+      // http://127.0.0.1:8000
+      const postUrl = `https://madhacks2025.onrender.com/api/route?${params.toString()}`
       console.log('POST request:', postUrl)
 
       const postResponse = await fetch(postUrl, {
@@ -56,7 +57,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
       }
 
       // Then fetch the result
-      const resultUrl = `http://127.0.0.1:8000/api/route/result`
+      const resultUrl = `https://madhacks2025.onrender.com/api/route/result`
       console.log('Fetching result:', resultUrl)
 
       const response = await fetch(resultUrl)
