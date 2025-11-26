@@ -1,14 +1,17 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Graph } from '../../../components'
-import network from '../../../public/network_leaflet.json'
+import dynamic from 'next/dynamic'
+
+const Graph = dynamic(() => import('./Graph'), { ssr: false })
 
 const CITY_OPTIONS = {"New York": 49233, "Los Angeles": 48177, "Chicago": 730132, "Miami": 794874, "Houston": 963794, "Dallas": 222262, "Philadelphia": 359683, "Atlanta": 81033, "Washington": 990965, "Boston": 687668, "Phoenix": 273331, "Detroit": 59112, "Seattle": 377822, "San Francisco": 388257, "San Diego": 966374, "Minneapolis": 373130, "Tampa": 230424, "Brooklyn": 613078, "Denver": 704506, "Queens": 131010, "Riverside": 40060, "Las Vegas": 285824, "Baltimore": 616410, "St. Louis": 409624, "Portland": 178183, "San Antonio": 451327, "Sacramento": 865262, "Austin": 532265, "Orlando": 196284, "San Juan": 339601, "San Jose": 549660, "Indianapolis": 762457, "Pittsburgh": 180964, "Cincinnati": 333274, "Manhattan": 896573, "Kansas City": 212923, "Cleveland": 199409, "Columbus": 692576, "Bronx": 526436, "Charlotte": 901048, "Virginia Beach": 942990, "Jacksonville": 519058, "Milwaukee": 911113, "Providence": 11974, "Nashville": 924671, "Salt Lake City": 742226, "Raleigh": 486410, "Richmond": 890976, "Memphis": 299587, "Oklahoma City": 806931, "Hartford": 793963, "Louisville": 538313, "Buffalo": 17330, "Fort Worth": 596181, "Bridgeport": 303369, "New Orleans": 24175, "Tucson": 465825, "El Paso": 89135, "Omaha": 524994, "McAllen": 514290, "Birmingham": 304761, "Albuquerque": 388205, "Tulsa": 613174, "Charleston": 500044, "Fresno": 577513, "Rochester": 244737, "Dayton": 587883, "Cape Coral": 159413, "Provo": 362397, "Colorado Springs": 669275, "Mission Viejo": 767642, "Allentown": 986996, "Baton Rouge": 185474, "Ogden": 288189, "Knoxville": 347983, "Grand Rapids": 533911, "Columbia": 552304, "Albany": 638986, "Bakersfield": 215684, "New Haven": 302053, "Des Moines": 116642, "Palm Bay": 223794, "Akron": 919737, "Concord": 30530, "Mesa": 300949, "Wichita": 213611}
 
-const SAMPLE_POINTS = network
+type RouteCalculatorProps = {
+  networkData: any
+}
 
-export default function Demo() {
+export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
   const [latencyWeight, setLatencyWeight] = useState('0.5')
   const [riskWeight, setRiskWeight] = useState('0.5')
   const [costWeight, setCostWeight] = useState('0.5')
@@ -78,8 +81,8 @@ export default function Demo() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="flex flex-row flex-nowrap gap-4 overflow-x-auto">
+    <div className="max-w-7xl mx-auto p-4 flex-1 w-full">
+      <div className="flex flex-row flex-nowrap gap-4 overflow-x-auto h-full">
         {/* Left column: selection menu */}
         <aside
           className="w-80 flex-shrink-0 rounded-md p-4"
@@ -242,9 +245,9 @@ export default function Demo() {
           )}
         </aside>
 
-        {/* Right column: graph area (placeholder) */}
+        {/* Right column: graph area */}
         <main
-          className="flex-1 rounded-md p-4 min-h-[60vh]"
+          className="flex-1 rounded-md p-4 flex flex-col"
           style={{
             backgroundColor: 'var(--color-siteBackgroundColor)',
             color: 'var(--color-sitePrimaryColor)'
@@ -252,15 +255,15 @@ export default function Demo() {
         >
           <h2 className="text-lg font-semibold mb-3">Graph</h2>
           <div
-            className="h-[60vh] flex items-center justify-center rounded-md w-full"
+            className="flex-1 flex items-center justify-center rounded-md w-full"
             style={{
               border: '2px dashed var(--color-siteSecondaryColor)',
               backgroundColor: 'transparent'
             }}
           >
-              <div className="w-full h-full">
+            <div className="w-full h-full">
               <Graph
-                edges={SAMPLE_POINTS as any}
+                edges={networkData as any}
                 stroke={'#dddddd'}
                 strokeWidth={3.5}
                 showPoints={true}

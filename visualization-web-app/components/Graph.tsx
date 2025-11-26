@@ -4,35 +4,7 @@ import React, { useEffect, useRef } from 'react'
 import { MapContainer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-
-function TestPoint({ lat, lng, label }: { lat: number; lng: number; label?: string }) {
-    const map = useMap()
-
-    useEffect(() => {
-        if (!map) return
-
-        const marker = L.circleMarker([lat, lng], {
-            radius: 6,
-            fillColor: '#ff0000',
-            color: '#ff0000',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.8,
-        }).addTo(map)
-
-        if (label) {
-            marker.bindPopup(label)
-        }
-
-        return () => {
-            if (marker && map.hasLayer(marker)) {
-                map.removeLayer(marker)
-            }
-        }
-    }, [lat, lng, map, label])
-
-    return null
-}
+import PathLayer from './PathLayer'
 
 type GraphProps = {
 	edges: any // GeoJSON or array of line segments
@@ -137,9 +109,12 @@ export default function Graph({
 			zoom={4}
 			style={{ width: '100%', height: '100%' }}
 			className={className}
-			scrollWheelZoom={true}
-			doubleClickZoom={true}
+			scrollWheelZoom={false}
+			doubleClickZoom={false}
 			dragging={true}
+			touchZoom={false}
+			boxZoom={false}
+			keyboard={false}
 		>
 			{/* No tile layer - blank canvas */}
 			<MapBackground color="#ffffff" />
@@ -148,21 +123,7 @@ export default function Graph({
 				<GeoJSONLayer edges={edges} stroke={stroke} strokeWidth={strokeWidth} />
 			)}
 
-			<TestPoint 
-				key={`path-node-010111}`}
-				lat={40.7128} 
-				lng={-74.006} 
-				label={`${"Hi"} #${"010111"}`}
-			/>		
-			
-			{pathData && pathData.map((node, index) => (
-				<TestPoint 
-					key={`path-node-${index}`}
-					lat={node.x} 
-					lng={node.y} 
-					label={`${node.type} #${index}`}
-				/>
-			))}
+			<PathLayer pathData={pathData} />
 		</MapContainer>
 	)
 }

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: SITE_NAME,
-  description: SITE_SLOGAN_SHORT,
+  title: "Fiber-optic Optimization Simulation",
+  description: "Interactive fiber-optic network route optimization",
 };
 
 export default function RootLayout({
