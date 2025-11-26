@@ -31,51 +31,55 @@ function GeoJSONLayer({
 	useEffect(() => {
 		if (!map || !edges) return
 
-		// Remove existing layer
-		if (geoJsonLayerRef.current) {
-			map.removeLayer(geoJsonLayerRef.current)
-		}
+		// Use setTimeout to ensure map is fully initialized
+		const timeoutId = setTimeout(() => {
+			// Remove existing layer
+			if (geoJsonLayerRef.current) {
+				map.removeLayer(geoJsonLayerRef.current)
+			}
 
-		// Convert edges array to GeoJSON FeatureCollection
-		let geojson: GeoJSON.FeatureCollection
+			// Convert edges array to GeoJSON FeatureCollection
+			let geojson: GeoJSON.FeatureCollection
 
-		if (Array.isArray(edges) && edges[0] && Array.isArray(edges[0][0])) {
-			// edges is an array of line segments: [[[lat, lng], [lat, lng]], ...]
-			const features = edges.map((segment, idx) => ({
-				type: 'Feature' as const,
-				properties: { id: idx },
-				geometry: {
-					type: 'LineString' as const,
-					coordinates: segment.map(([lat, lng]: [number, number]) => [lng, lat]), // GeoJSON uses [lon, lat]
+			if (Array.isArray(edges) && edges[0] && Array.isArray(edges[0][0])) {
+				// edges is an array of line segments: [[[lat, lng], [lat, lng]], ...]
+				const features = edges.map((segment, idx) => ({
+					type: 'Feature' as const,
+					properties: { id: idx },
+					geometry: {
+						type: 'LineString' as const,
+						coordinates: segment.map(([lat, lng]: [number, number]) => [lng, lat]), // GeoJSON uses [lon, lat]
+					},
+				}))
+				geojson = { type: 'FeatureCollection' as const, features }
+			} else {
+				// Assume it's already GeoJSON format
+				geojson = edges
+			}
+
+			// Create GeoJSON layer with styling
+			const geoJsonLayer = L.geoJSON(geojson, {
+				style: {
+					color: stroke,
+					weight: strokeWidth,
+					opacity: 0.8,
+					lineCap: 'round',
+					lineJoin: 'round',
 				},
-			}))
-			geojson = { type: 'FeatureCollection' as const, features }
-		} else {
-			// Assume it's already GeoJSON format
-			geojson = edges
-		}
+			})
 
-		// Create GeoJSON layer with styling
-		const geoJsonLayer = L.geoJSON(geojson, {
-			style: {
-				color: stroke,
-				weight: strokeWidth,
-				opacity: 0.8,
-				lineCap: 'round',
-				lineJoin: 'round',
-			},
-		})
+			geoJsonLayer.addTo(map)
+			geoJsonLayerRef.current = geoJsonLayer
 
-		geoJsonLayer.addTo(map)
-		geoJsonLayerRef.current = geoJsonLayer
-
-		// Auto-fit bounds
-		const bounds = geoJsonLayer.getBounds()
-		if (bounds.isValid()) {
-			map.fitBounds(bounds, { padding: [50, 50] })
-		}
+			// Auto-fit bounds
+			const bounds = geoJsonLayer.getBounds()
+			if (bounds.isValid()) {
+				map.fitBounds(bounds, { padding: [50, 50] })
+			}
+		}, 0)
 
 		return () => {
+			clearTimeout(timeoutId)
 			if (geoJsonLayerRef.current && map.hasLayer(geoJsonLayerRef.current)) {
 				map.removeLayer(geoJsonLayerRef.current)
 			}

@@ -18,7 +18,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
   const [algorithm, setAlgorithm] = useState('dijkstra')
   const [source, setSource] = useState('')
   const [destination, setDestination] = useState('')
-  const [result, setResult] = useState<string | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
   const [pathData, setPathData] = useState<Array<{x: number, y: number, type: string}> | null>(null)
 
   async function handleCalculate() {
@@ -32,7 +32,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
     }
 
     try {
-      setResult('Calculating route...')
+      setIsCalculating(true)
       setPathData(null)
 
       // First, make POST request to initiate route calculation
@@ -71,31 +71,30 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
 
       if (data.path && Array.isArray(data.path)) {
         setPathData(data.path)
-        setResult(`Path found with ${data.path.length} nodes`)
-      } else {
-        setResult('No path data in response')
       }
     } catch (err) {
       console.error('Error fetching route:', err)
-      setResult(`Error: ${(err as Error).message}`)
+      alert(`Error: ${(err as Error).message}`)
+    } finally {
+      setIsCalculating(false)
     }
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 flex-1 w-full">
-      <div className="flex flex-row flex-nowrap gap-4 overflow-x-auto h-full">
+    <div className="max-w-7xl mx-auto p-2 w-full" style={{ maxHeight: '75vh' }}>
+      <div className="flex flex-row flex-nowrap gap-3 overflow-x-auto h-full">
         {/* Left column: selection menu */}
         <aside
-          className="w-80 flex-shrink-0 rounded-md p-4"
+          className="w-80 flex-shrink-0 rounded-md p-3"
           style={{
             backgroundColor: 'var(--color-siteBackgroundColor)',
             color: 'var(--color-sitePrimaryColor)'
           }}
         >
-          <h2 className="text-lg font-semibold mb-3">Controls</h2>
+          <h2 className="text-base font-semibold mb-2">Controls</h2>
 
           {/* Weights for optimization types */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium mb-1">Latency weight</label>
             <select
               value={latencyWeight}
@@ -161,7 +160,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
           </div>
 
           {/* Algorithm selector */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium mb-1">Algorithm</label>
             <select
               value={algorithm}
@@ -179,7 +178,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
           </div>
 
           {/* Source */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium mb-1">Source</label>
             <select
               value={source}
@@ -201,7 +200,7 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
           </div>
 
           {/* Destination */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium mb-1">Destination</label>
             <select
               value={destination}
@@ -225,36 +224,29 @@ export default function RouteCalculator({ networkData }: RouteCalculatorProps) {
           <div className="mt-2">
             <button
               onClick={handleCalculate}
-              className="w-full rounded-md bg-blue-600 text-white px-4 py-2 hover:bg-blue-700"
+              disabled={isCalculating}
+              className="w-full rounded-md bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {isCalculating && (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               Calculate Path
             </button>
           </div>
-
-          {result && (
-            <div
-              className="mt-4 p-2 rounded-md text-sm"
-              style={{
-                backgroundColor: 'var(--color-sitePrimaryColor)',
-                color: 'var(--color-siteTextColor)',
-                border: '1px solid var(--color-siteSecondaryColor)'
-              }}
-            >
-              <strong>Result:</strong>
-              <div className="mt-1 break-words">{result}</div>
-            </div>
-          )}
         </aside>
 
         {/* Right column: graph area */}
         <main
-          className="flex-1 rounded-md p-4 flex flex-col"
+          className="flex-1 rounded-md p-3 flex flex-col"
           style={{
             backgroundColor: 'var(--color-siteBackgroundColor)',
             color: 'var(--color-sitePrimaryColor)'
           }}
         >
-          <h2 className="text-lg font-semibold mb-3">Graph</h2>
+          <h2 className="text-base font-semibold mb-2">Graph</h2>
           <div
             className="flex-1 flex items-center justify-center rounded-md w-full"
             style={{

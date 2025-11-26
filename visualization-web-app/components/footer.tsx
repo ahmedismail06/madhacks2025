@@ -7,7 +7,7 @@ export default function Footer() {
 			className="relative w-full"
 			style={{ background: "var(--background)" }}
 		>
-			<div className="max-w-6xl mx-auto py-4 px-6 text-center text-lg text-[var(--foreground)]">
+			<div className="max-w-6xl mx-auto py-6 px-6 text-center text-sm text-[var(--foreground)]">
 				<span>
 					MadHacks 2025. &nbsp;
 					<span aria-hidden>©</span>
