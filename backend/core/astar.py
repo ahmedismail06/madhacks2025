@@ -31,7 +31,7 @@ def heuristic(graph: Graph, node_id: int, goal_id: int) -> float:
     return math.sqrt(dx * dx + dy * dy)
 
 
-async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
+def astar(graph: Graph, start: str, goal: str, weight_func):
     """
     Find optimal fiber optic path using A* algorithm.
     Prioritizes nodes closer to goal for faster search.
@@ -41,10 +41,11 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
         start: Starting city name
         goal: Destination city name
         weight_func: Edge cost calculation function
-        send_event: Async callback for visualization events
     
     Returns:
-        List of nodes [{x, y, type}] or None if no path found
+        tuple: (path_nodes, tried_edges)
+            - path_nodes: List of nodes [{x, y, type}] or None if no path found
+            - tried_edges: List of all edges explored [{start_x, start_y, end_x, end_y}]
     """
     # Look up city node IDs from names
     from services.loader import city_name_to_id
@@ -53,8 +54,10 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
     
     # Validate city names exist
     if start_id is None or goal_id is None:
-        await send_event("no-path", {"reason": "Invalid city name"})
-        return None
+        return None, []
+    
+    # Track all edges tried during pathfinding
+    tried_edges = []
     
     # Initialize A* data structures
     open_heap = []  # Priority queue: (f_score, node_id, signal_quality)
@@ -64,17 +67,6 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
     signal_quality = {start_id: 1.0}  # Signal quality at each node
     came_from: dict[int, tuple[int, int]] = {}  # Backtracking map
     visited = set()  # Processed nodes
-
-    # Send initial event
-    await send_event("start", {
-        "start": start_id,
-        "goal": goal_id,
-        "initialQuality": 1.0,
-        "start_x": graph.nodes[start_id].x,
-        "start_y": graph.nodes[start_id].y,
-        "end_x": graph.nodes[goal_id].x,
-        "end_y": graph.nodes[goal_id].y
-    })
 
     # Main A* loop - process nodes by f_score (cost + heuristic)
     while open_heap:
@@ -86,16 +78,6 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
         
         visited.add(current_id)
         current = graph.nodes[current_id]
-
-        # Send node visit event
-        node_name = current.name if current.name else f"{current.type}{current.id}"
-        await send_event("node", {
-            "nodeName": node_name,
-            "status": "visited",
-            "x": current.x,
-            "y": current.y,
-            "signalQuality": current_quality
-        })
 
         # Goal reached - reconstruct path
         if current_id == goal_id:
@@ -122,19 +104,21 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             })
             path_nodes = path_nodes[::-1] # reverse path to start->goal
             
-            await send_event("final-path", {
-                "path": path_nodes,
-                "totalScore": g_score[goal_id],
-                "finalSignalQuality": current_quality,
-                "regenerations": sum(1 for n in path_nodes if n["type"] == "regen_spot")
-            })
-            return path_nodes
+            return path_nodes, tried_edges
 
         # Explore neighbors
         for edge_id in current.edge_ids:
             edge = graph.edges[edge_id]
             neighbor_id = edge.get_other_node(current_id)
             neighbor = graph.nodes[neighbor_id]
+            
+            # Track this edge as tried
+            tried_edges.append({
+                "start_x": edge.start_x,
+                "start_y": edge.start_y,
+                "end_x": edge.end_x,
+                "end_y": edge.end_y
+            })
             
             # Skip already-visited nodes
             if neighbor_id in visited:
@@ -149,23 +133,11 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
             
             # Reject if signal drops below 10% threshold
             if new_quality < 0.1:
-                await send_event("edge", {
-                    "edgeId": edge_id,
-                    "status": "failed",
-                    "reason": "signal_degraded",
-                    "signalQuality": new_quality
-                })
                 continue
             
             # Regeneration spots reset signal to 100%
             if neighbor.type == "regen_spot":
                 new_quality = 1.0
-                await send_event("regeneration", {
-                    "nodeId": neighbor_id,
-                    "signalQuality": new_quality,
-                    "x": neighbor.x,
-                    "y": neighbor.y
-                })
             
             # Calculate tentative g_score
             tentative_g_score = g_score[current_id] + weight_func(edge)
@@ -177,23 +149,6 @@ async def astar(graph: Graph, start: str, goal: str, weight_func, send_event):
                 signal_quality[neighbor_id] = new_quality
                 came_from[neighbor_id] = (current_id, edge_id)
                 heapq.heappush(open_heap, (f_score[neighbor_id], neighbor_id, new_quality))
-                
-                await send_event("edge", {
-                    "edgeId": edge_id,
-                    "status": "succeeded",
-                    "from": current_id,
-                    "to": neighbor_id,
-                    "newCost": tentative_g_score,
-                    "signalQuality": new_quality,
-                    "degradation": edge.degrade_rate
-                })
-            else:
-                await send_event("edge", {
-                    "edgeId": edge_id,
-                    "status": "failed",
-                    "reason": "not_better"
-                })
 
     # No path found after exploring all reachable nodes
-    await send_event("no-path", {"reason": "No route found"})
-    return None
+    return None, tried_edges

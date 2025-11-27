@@ -6,12 +6,11 @@
 
 import threading
 from flask import Blueprint, request, jsonify
-from services.jobs import create_job, make_event_sender
+from services.jobs import create_job, store_result
 from services.loader import load_graph
 from core.dijkstra import dijkstra
 from core.astar import astar
 from core.weights import make_weight_function
-import asyncio
 
 route_bp = Blueprint('route', __name__)
 
@@ -48,22 +47,19 @@ def start_route():
     w_traffic_float = float(w_traffic)
     w_risk_float = float(w_risk)
 
-    # Create job and event sender
+    # Create job
     job_id = create_job()
-    send_event = make_event_sender(job_id)
     weight_func = make_weight_function(w_lat_float, w_traffic_float, w_risk_float)
     
     # Select algorithm (A* or Dijkstra)
     search_func = astar if algorithm == "a-star" else dijkstra
     
     # Run pathfinding in background thread to avoid blocking
-    def run_async_task():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(search_func(graph, start, goal, weight_func, send_event))
-        loop.close()
+    def run_task():
+        path, tried_edges = search_func(graph, start, goal, weight_func)
+        store_result(job_id, path, tried_edges)
     
-    thread = threading.Thread(target=run_async_task, daemon=True)
+    thread = threading.Thread(target=run_task, daemon=True)
     thread.start()
 
     # Return job ID immediately

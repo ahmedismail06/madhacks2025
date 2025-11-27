@@ -20,7 +20,7 @@ backend/
 ├── requirements.txt        # Python dependencies
 ├── api/                    # REST API endpoints
 │   ├── route.py           # POST /api/route - Start pathfinding job
-│   ├── stream.py          # GET /api/route/stream - SSE algorithm progress
+│   ├── edges.py           # GET /api/route/edges - Get tried edges
 │   └── result.py          # GET /api/route/result - Get final path JSON
 ├── core/                   # Pathfinding algorithms & data structures
 │   ├── graph.py           # Node, Edge, Graph data structures
@@ -28,7 +28,7 @@ backend/
 │   ├── dijkstra.py        # Dijkstra's algorithm implementation
 │   └── astar.py           # A* algorithm implementation
 ├── services/              # Background job management & data loading
-│   ├── jobs.py            # Job queue, event batching, job tracking
+│   ├── jobs.py            # Job queue, result storage, job tracking
 │   └── loader.py          # Load network graph from JSON files
 └── data/                  # Network topology data
     ├── nodes.json         # Network nodes (cities, infrastructure, regen spots)
@@ -64,36 +64,38 @@ curl -X POST "http://localhost:8000/api/route?start=New%20York&goal=Los%20Angele
 }
 ```
 
-### 2. Stream Algorithm Progress (SSE)
-**GET** `/api/route/stream?id=<jobId>`
+### 2. Get Explored Edges (JSON)
+**GET** `/api/route/edges?id=<jobId>`
 
-Opens a Server-Sent Events connection to receive real-time algorithm progress updates.
+Returns all edges that were explored during the pathfinding algorithm.
 
 **Query Parameters:**
 - `id` (required): Job ID returned from POST /api/route
 
 **Example Request:**
 ```bash
-curl -N "http://localhost:8000/api/route/stream?id=abc123def456"
+curl "http://localhost:8000/api/route/edges?id=abc123def456"
 ```
 
-**Event Stream Format:**
-```
-event: batch
-data: [{"type": "node-visit", "nodeId": 123, "cost": 45.2}, ...]
-
-event: final-path
-data: {"path": [{"x": 40.7128, "y": -74.0060, "type": "city"}, ...]}
-
-event: no-path
-data: {"reason": "No viable path found (signal quality too low)"}
+**Response (Running):**
+```json
+{
+  "status": "running",
+  "tried_edges": []
+}
 ```
 
-**Event Types:**
-- `node-visit`: Algorithm visited a node (includes nodeId, cost, signal quality)
-- `edge-visit`: Algorithm explored an edge (includes edgeId, fromNode, toNode)
-- `final-path`: Pathfinding succeeded (includes full path as array of coordinates)
-- `no-path`: Pathfinding failed (includes reason)
+**Response (Completed):**
+```json
+{
+  "status": "completed",
+  "tried_edges": [
+    {"start_x": 40.7128, "start_y": -74.0060, "end_x": 40.7580, "end_y": -73.9855},
+    {"start_x": 40.7580, "start_y": -73.9855, "end_x": 41.8781, "end_y": -87.6298},
+    ...
+  ]
+}
+```
 
 ### 3. Get Final Result (JSON)
 **GET** `/api/route/result`
@@ -264,10 +266,10 @@ Complete workflow for finding a route from New York to Los Angeles:
 RESPONSE=$(curl -X POST "http://localhost:8000/api/route?start=New%20York&goal=Los%20Angeles&latency=1.5&traffic=1.0&risk=0.5&algorithm=astar")
 JOB_ID=$(echo $RESPONSE | jq -r '.jobId')
 
-# 2. Stream real-time progress (in separate terminal)
-curl -N "http://localhost:8000/api/route/stream?id=$JOB_ID"
+# 2. Get all edges explored during pathfinding
+curl "http://localhost:8000/api/route/edges?id=$JOB_ID"
 
-# 3. Get final result as JSON (after job completes)
+# 3. Get final result as JSON
 curl "http://localhost:8000/api/route/result"
 ```
 
@@ -280,20 +282,12 @@ Access-Control-Allow-Origin: *
 
 This enables the API to be consumed by single-page applications hosted on different domains.
 
-## Event Batching
-
-To optimize network performance, the API batches algorithm progress events:
-- Events are accumulated in groups of 10
-- Batches are sent as single SSE `batch` events
-- Final events (`final-path`, `no-path`) trigger immediate flush
-
-This reduces network overhead while maintaining real-time visualization capabilities.
-
 ## Performance Considerations
 
-- **Concurrent Jobs**: Jobs run in background threads using asyncio event loops
+- **Concurrent Jobs**: Jobs run in background threads for non-blocking operation
 - **Job Tracking**: Each job is tracked by unique ID, allowing multiple simultaneous pathfinding operations
 - **Memory**: Graph data loaded once at startup and shared across all requests
+- **Polling**: Result endpoint polls every 100ms until completion (max 60 seconds)
 - **Scalability**: Consider using a production WSGI server (gunicorn, uwsgi) instead of Flask's development server
 
 ## Error Handling

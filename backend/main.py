@@ -6,17 +6,17 @@
 
 from flask import Flask, jsonify
 from api.route import route_bp
-from api.stream import stream_bp
+from api.edges import edges_bp
 from api.result import result_bp
 
 app = Flask(__name__)
 
 # Register API blueprints for pathfinding endpoints
 # - route_bp: Initiates pathfinding jobs (POST /api/route)
-# - stream_bp: Streams real-time algorithm progress via SSE (GET /api/route/stream)
+# - edges_bp: Returns all tried edges in JSON format (GET /api/route/edges)
 # - result_bp: Returns final path results in JSON format (GET /api/route/result)
 app.register_blueprint(route_bp, url_prefix="/api")
-app.register_blueprint(stream_bp, url_prefix="/api")
+app.register_blueprint(edges_bp, url_prefix="/api")
 app.register_blueprint(result_bp, url_prefix="/api")
 
 
